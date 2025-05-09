@@ -9,6 +9,7 @@
 import SwiftUI
 
 struct SettingsView: View {
+    @Environment(\.presentationMode) var presentationMode 
     @State var endpoint: String = ""
 //    @State var remoteDetection: Bool
 //    

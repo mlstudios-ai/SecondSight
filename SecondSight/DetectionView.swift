@@ -15,6 +15,7 @@ import CoreML
 struct DetectionView: View {
     @StateObject private var model = DetectionModel()
     @State private var description: String? = nil
+    @State private var errorMessage: String? = "Hazard detection is not running."
     @State private var showSettings = false
     
     var body: some View {
@@ -39,12 +40,10 @@ struct DetectionView: View {
                 .ignoresSafeArea()
                 .background(.black)
                 .onDisappear {
-                    model.camera.stop()
+                    model.stop()
                 }
                 .onAppear {
-                    Task {
-                        await model.camera.start()
-                    }
+                    model.start()
                 }
             }
             
@@ -65,6 +64,8 @@ struct DetectionView: View {
                     
                     var statusImage: String {
                         switch model.status {
+                        case .ready:
+                            return "StatusInProgress"
                         case .running:
                             return "StatusInProgress"
                         case .stopped:
@@ -78,20 +79,27 @@ struct DetectionView: View {
                         .resizable()
                         .frame(width: 32, height: 32)
                 }
-                .frame(height: 60)
+                .frame(height: 54)
                 .background(Color.black.opacity(0.75))
                 .padding(.horizontal, 24)
+                .foregroundColor(.white)
                 
                 Spacer()
-                // Description message
-                if let message = description {
+                
+                // Display message
+                if let message = model.status == .running ? description : errorMessage {
                    Text(message)
                         .font(.headline)
                         .foregroundColor(.white)
                         .padding(5)
-                        .frame(maxWidth: .infinity)
+                        .frame(alignment: .center)
                         .background(Color.black.opacity(0.75))
                         .padding(.bottom, 20)
+                    
+                    if model.status != .running {
+                        // display message at center
+                        Spacer()
+                    }
                 }
                 
                 // Bottom Tab Bar
@@ -146,18 +154,22 @@ struct DetectionView: View {
                         }
                     }
                 }
-                .padding(.vertical, 8)
+                .frame(height: 54)
+                .padding(.horizontal, 24)
                 .background(Color.black.opacity(0.75))
                 .foregroundColor(.white)
+            }
+            .sheet(isPresented: $showSettings) {
+                SettingsView(onClose: {
+                    showSettings = false
+                    print("Settings view closed")
+                })
+                .presentationBackground(.clear)
+                .padding(.vertical, 54)
                 .padding(.horizontal, 24)
+                
             }
-            
-            // Settings popup
-            if showSettings {
-                Color.black.opacity(0.4)
-                    .ignoresSafeArea()
-                SettingsView()
-            }
+            .backgroundStyle(Color.black.opacity(0.85))
         }
         .onTapGesture { // describe scene
             describeScene()
@@ -178,17 +190,19 @@ struct DetectionView: View {
     }
 
     private func describeScene() {
-        description = "Detection objects " + model.uniqueLabels.joined(separator: ", ")
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            description = nil
+        if model.status == .running {
+            description = "Detection objects " + model.uniqueLabels.joined(separator: ", ")
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                description = nil
+            }
+            // TODO: check internet connection and endpoint connection
+            // TODO: pause to allow speech and reading time
+            // TODO: make message disappear after a time interval
+            // TODO: make message disappear when object is no longer detected
+            // TODO: replease message when new objects are detected.
+            // TODO: consider skip frame
         }
-        // TODO: check internet connection and endpoint connection
-        // TODO: pause to allow speech and reading time
-        // TODO: make message disappear after a time interval
-        // TODO: make message disappear when object is no longer detected
-        // TODO: replease message when new objects are detected.
-        // TODO: consider skip frame
     }
     
     private func pauseDetection() {
@@ -200,7 +214,7 @@ struct DetectionView: View {
     }
     
     private func showSettingsPopup() {
-//        showSettings = true
+        showSettings = true
     }
     
     
@@ -234,42 +248,46 @@ struct DetectionView: View {
         @Published var uniqueLabels: Set<String> = []
         
         enum DetectionStatus {
-                case running, stopped, error
+                case ready, running, stopped, error
             }
         
-        @Published var status: DetectionStatus = .stopped
+        @Published var status: DetectionStatus = .ready
         
         private var YOLOv11Model: VNCoreMLModel?
         let camera = Camera()
         
         init() {
-            if let model = try? YOLOv11s().model {
+            if let model = try? DetectionYOLO11n().model {
                 if let vnModel = try? VNCoreMLModel(for: model) {
                     YOLOv11Model = vnModel
                 }
             }
             if let _ = YOLOv11Model {
+                start()
                 logger.info("Loaded YOLOv11n model")
             } else {
+                self.status = .error
                 logger.error("Failed to load YOLOv11n model")
             }
-            
-            start() // start detecting by default
         }
         
         // start detection
         public func start() {
-            Task {
-                self.status = .running
-                await camera.start()
-                await consumePreviewStream()
+            if self.status != .error {
+                Task {
+                    self.status = .running
+                    await camera.start()
+                    await consumePreviewStream()
+                }
             }
         }
         
         // stop detection
         public func stop() {
-            camera.stop()
-            status = .stopped
+            if self.status != .error {
+                camera.stop()
+                status = .stopped
+            }
         }
         
         private func consumePreviewStream() async {
@@ -283,7 +301,7 @@ struct DetectionView: View {
                         // Create a VNCoreMLRequest with the YOLOv11 model
                         let request = VNCoreMLRequest(model: YOLOv11nModel) { (request, error) in
                             if let error = error {
-                                logger.error("Failed to process YOLOv11n model: \(error)")
+                                logger.error("Failed to process detection model: \(error)")
                                 self.status = .error
                                 return
                             }
