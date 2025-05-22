@@ -15,9 +15,9 @@ struct DetectionView: View {
     @State private var showSettings = false
     @State private var description: String? = nil
     @State private var appState: AppState = AppState.ready
-    private var errorMessage: String = "Error running detection!"
-    private var pauseMessage: String? = "Detection is paused"
-    private var resumeMessage: String? = "Detection in progress"
+    private let errorMessage: String = "Error running detection!"
+    private let pauseMessage: String = "Detection is paused"
+    private let resumeMessage: String = "Detection is in progress"
     
     enum AppState { // different state the app can be in
         case error, ready, progress, speech, paused
@@ -46,9 +46,15 @@ struct DetectionView: View {
                 .background(.black)
                 .onDisappear {
                     pauseDetection()
+                    Task {
+                        await speakStatus(text: pauseMessage)
+                    }
                 }
                 .onAppear {
                     resumeDetection()
+                    Task {
+                        await speakStatus(text: resumeMessage)
+                    }
                 }
             }
             
@@ -106,7 +112,7 @@ struct DetectionView: View {
                         .background(Color.black.opacity(0.75))
                         .padding(.bottom, 20)
                     
-                    if appState != .progress && appState != .speech {
+                    if appState != .speech {
                         // display message at center
                         Spacer()
                     }
@@ -131,6 +137,9 @@ struct DetectionView: View {
                     
                     Button(action: {    // pause detection
                         pauseDetection()
+                        Task {
+                            await speakStatus(text: pauseMessage)
+                        }
                     }) {
                         HStack {
                             Image("GestureSwipeDown")
@@ -145,7 +154,9 @@ struct DetectionView: View {
                     Spacer()
                     
                     Button(action: {    // resume detection
-                        resumeDetection()
+                        Task {
+                            await speakStatus(text: resumeMessage)
+                        }
                     }) {
                         HStack {
                             Image("GestureSwipeUp")
@@ -195,8 +206,14 @@ struct DetectionView: View {
                 .onEnded { value in
                     if value.translation.height < 0 { // swipe up - pause
                         resumeDetection()
+                        Task {
+                            await speakStatus(text: resumeMessage)
+                        }
                     } else if value.translation.height > 0 { // swipe down - resume
                         pauseDetection()
+                        Task {
+                            await speakStatus(text: pauseMessage)
+                        }
                     }
                 }
         )
@@ -288,6 +305,26 @@ struct DetectionView: View {
             synthesizer.stopSpeaking(at: .immediate);
             resumeDetection()
             description = nil
+        }
+    }
+    
+    private func speakStatus(text: String) async {
+        if (synthesizer.isSpeaking) {
+            synthesizer.stopSpeaking(at: .immediate); // Or wait for `onend` event
+        }
+        
+        let utterance = AVSpeechUtterance(string: text)
+        utterance.voice = AVSpeechSynthesisVoice(language: "en-AU") // You can change the language
+        
+        synthesizer.speak(utterance)
+        description = text
+        
+        // hack to give it sometime to finish speaking, delegate is not compatible with UI
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2)) {
+            synthesizer.stopSpeaking(at: .immediate);
+            if appState == .progress {
+                description = nil
+            }
         }
     }
     
