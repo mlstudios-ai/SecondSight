@@ -4,5 +4,9 @@
 <dict>
 	<key>UILaunchImageFile~iphone</key>
 	<string>$(MARKETING_VERSION)</string>
+	<key>EndpointURL</key>
+	<string>https://e93e-159-196-169-221.ngrok-free.app/</string>
+	<key>HuggingFaceAPIKey</key>
+	<string></string>
 </dict>
 </plist>

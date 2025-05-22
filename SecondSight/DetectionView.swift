@@ -6,31 +6,37 @@
 //
 
 import SwiftUI
-import os.log
 import AVFoundation
 import UIKit
-import Vision
-import CoreML
 
 struct DetectionView: View {
-    @StateObject private var model = DetectionModel()
-    @State private var description: String? = nil
-    @State private var errorMessage: String? = "Hazard detection is not running."
+    @StateObject private var detectionModel = DetectionModel()
     @State private var showSettings = false
+    @State private var description: String? = nil
+    @State private var state: AppState = AppState.ready
+    private var errorMessage: String = "Error running detection!"
+    private var pauseMessage: String? = "Detection paused"
+    private var resumeMessage: String? = "Detection in progress"
+    private let synthesizer = AVSpeechSynthesizer()
+    
+    enum AppState { // different state the app can be in
+        case error, ready, progress, speech, paused, stopped
+    }
+    
     
     var body: some View {
         ZStack {
             ZStack {
                 // Detection area
                 GeometryReader { geometry in
-                    if let previewImage = model.previewImage {
+                    if let previewImage = detectionModel.previewImage {
                         previewImage
                             .resizable()
                             .scaledToFit()
                             .frame(width: geometry.size.width, height: geometry.size.height)
                             .overlay {
                                 GeometryReader { (geometry: GeometryProxy) in
-                                    ForEach(model.recognizedObjects){ obj in
+                                    ForEach(detectionModel.recognizedObjects){ obj in
                                         BoundingBox(imageViewGeometry: geometry, label: obj.label, rect: obj.boundingBox, color: Color.red, hideLabel: false)
                                     }
                                 }
@@ -40,10 +46,10 @@ struct DetectionView: View {
                 .ignoresSafeArea()
                 .background(.black)
                 .onDisappear {
-                    model.stop()
+                    detectionModel.stop()
                 }
                 .onAppear {
-                    model.start()
+                    detectionModel.start()
                 }
             }
             
@@ -56,22 +62,24 @@ struct DetectionView: View {
                     Text("Potential Hazards:")
                         .font(.title2).bold()
                         .foregroundColor(.white)
-                    Text(model.uniqueLabels.joined(separator: ", "))
+                    Text(detectionModel.uniqueLabels.joined(separator: ", "))
                         .font(.title2).bold()
                         .foregroundColor(.red)
                     
                     Spacer()
                     
                     var statusImage: String {
-                        switch model.status {
-                        case .ready:
-                            return "StatusInProgress"
+                        switch detectionModel.status {
                         case .running:
                             return "StatusInProgress"
+//                        case .speech:
+//                            return "StatusSpeech"
                         case .stopped:
                             return "StatusStopped"
                         case .error:
                             return "StatusError"
+                        default:
+                            return "StatusUnknown"
                         }
                     }
                     
@@ -87,7 +95,8 @@ struct DetectionView: View {
                 Spacer()
                 
                 // Display message
-                if let message = model.status == .running ? description : errorMessage {
+                if let message = detectionModel.status == .running ? description
+                    : detectionModel.status == .stopped ? pauseMessage : errorMessage {
                    Text(message)
                         .font(.headline)
                         .foregroundColor(.white)
@@ -96,7 +105,7 @@ struct DetectionView: View {
                         .background(Color.black.opacity(0.75))
                         .padding(.bottom, 20)
                     
-                    if model.status != .running {
+                    if detectionModel.status != .running {
                         // display message at center
                         Spacer()
                     }
@@ -115,6 +124,8 @@ struct DetectionView: View {
                                 .font(.headline)
                         }
                     }
+                    .accessibilityLabel("Describe Scene")
+                    
                     Spacer()
                     
                     Button(action: {    // pause detection
@@ -128,6 +139,8 @@ struct DetectionView: View {
                                 .font(.headline)
                         }
                     }
+                    .accessibilityLabel("Pause Detection")
+                    
                     Spacer()
                     
                     Button(action: {    // resume detection
@@ -139,7 +152,10 @@ struct DetectionView: View {
                                 .frame(width: 32, height: 32)
                             Text("Resume")
                                 .font(.headline)
-                        }}
+                        }
+                    }
+                    .accessibilityLabel("Resume Detection")
+                    
                     Spacer()
                     
                     Button(action: {    // show settings configs
@@ -153,6 +169,7 @@ struct DetectionView: View {
                                 .font(.headline)
                         }
                     }
+                    .accessibilityLabel("Open Settings")
                 }
                 .frame(height: 54)
                 .padding(.horizontal, 24)
@@ -167,12 +184,10 @@ struct DetectionView: View {
                 .presentationBackground(.clear)
                 .padding(.vertical, 54)
                 .padding(.horizontal, 24)
+                .foregroundColor(.black)
                 
             }
             .backgroundStyle(Color.black.opacity(0.85))
-        }
-        .onTapGesture { // describe scene
-            describeScene()
         }
         .gesture( // pause/resume detection
             DragGesture(minimumDistance: 30, coordinateSpace: .local)
@@ -187,36 +202,85 @@ struct DetectionView: View {
         .onLongPressGesture {  // option popup
             showSettingsPopup()
         }
+        .onTapGesture { // describe scene
+            describeScene()
+        }
+        .onChange(of: detectionModel.uniqueLabels) {
+            alertHazards(newObjects:detectionModel.recognizedObjects)
+        }
     }
 
-    private func describeScene() {
-        if model.status == .running {
-            description = "Detection objects " + model.uniqueLabels.joined(separator: ", ")
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                description = nil
+    private func alertHazards(newObjects: [RecognizedObject]) {
+        Task {
+            if !newObjects.isEmpty {
+                var generator = UIImpactFeedbackGenerator(style: .light) // 1 hazard
+                if newObjects.count > 1 { // two or more hazards
+                    generator = UIImpactFeedbackGenerator(style: .medium)
+                } else if newObjects.count > 3 { // 4 or more hazards
+                    generator = UIImpactFeedbackGenerator(style: .heavy)
+                }
+                
+                generator.prepare()
+                generator.impactOccurred()
+                
+                description = "Detected " +  detectionModel.uniqueLabels.joined(separator: ", ")
+                await speak(text: description!) // use delegate to timeout
             }
-            // TODO: check internet connection and endpoint connection
-            // TODO: pause to allow speech and reading time
-            // TODO: make message disappear after a time interval
-            // TODO: make message disappear when object is no longer detected
-            // TODO: replease message when new objects are detected.
-            // TODO: consider skip frame
+            description = nil
         }
     }
     
+    /**
+     Describe the detected object in the secene. If no objects, it descibes the scene normally.
+     */
+    private func describeScene() {//
+//        if detectionModel.status == .running && description != nil {
+//            Task {
+//                // TODO: pause detection
+////                sceneModel.infer()
+//                await speak(text: description!)
+//                description = nil
+//            }
+//        }
+//            // TODO: check internet connection and endpoint connection
+//            // TODO: pause to allow speech and reading time
+//            // TODO: make message disappear after a time interval
+//            // TODO: make message disappear when object is no longer detected
+//            // TODO: replease message when new objects are detected.
+//            // TODO: replease message when new objects are detected.
+//            // TODO: consider skip frame
+    }
+    
     private func pauseDetection() {
-        model.stop()
+        Task {
+            detectionModel.stop()
+            state = .paused
+            await speak(text: pauseMessage!)
+        }
     }
     
     private func resumeDetection() {
-        model.start()
+        Task{
+            detectionModel.start()
+            await speak(text: resumeMessage!)
+        }
     }
     
     private func showSettingsPopup() {
         showSettings = true
     }
     
+    private func speak(text: String) async {
+        if description != nil {
+            if (synthesizer.isSpeaking) {
+                synthesizer.stopSpeaking(at: .immediate); // Or wait for `onend` event
+            }
+            
+            let utterance = AVSpeechUtterance(string: description!)
+            utterance.voice = AVSpeechSynthesisVoice(language: "en-AU") // You can change the language
+            synthesizer.speak(utterance)
+        }
+    }
     
     // Draw a bounding box around the recognized object
     private func BoundingBox(imageViewGeometry: GeometryProxy, label: String, rect: CGRect, color: Color, hideLabel: Bool) -> some View {
@@ -241,109 +305,5 @@ struct DetectionView: View {
         return CGRect(x: normalizedCGRect.minX * imageViewWidth, y: flippedY * imageViewHeight, width: normalizedCGRect.width * imageViewWidth, height: normalizedCGRect.height * imageViewHeight)
     }
     
-    // Detection Handler
-    @MainActor class DetectionModel : ObservableObject {
-        @Published var previewImage: Image?
-        @Published var recognizedObjects: [RecognizedObject] = []
-        @Published var uniqueLabels: Set<String> = []
-        
-        enum DetectionStatus {
-                case ready, running, stopped, error
-            }
-        
-        @Published var status: DetectionStatus = .ready
-        
-        private var YOLOv11Model: VNCoreMLModel?
-        let camera = Camera()
-        
-        init() {
-            if let model = try? DetectionYOLO11n().model {
-                if let vnModel = try? VNCoreMLModel(for: model) {
-                    YOLOv11Model = vnModel
-                }
-            }
-            if let _ = YOLOv11Model {
-                start()
-                logger.info("Loaded YOLOv11n model")
-            } else {
-                self.status = .error
-                logger.error("Failed to load YOLOv11n model")
-            }
-        }
-        
-        // start detection
-        public func start() {
-            if self.status != .error {
-                Task {
-                    self.status = .running
-                    await camera.start()
-                    await consumePreviewStream()
-                }
-            }
-        }
-        
-        // stop detection
-        public func stop() {
-            if self.status != .error {
-                camera.stop()
-                status = .stopped
-            }
-        }
-        
-        private func consumePreviewStream() async {
-            for await ciImage in camera.previewStream.stream {
-                Task { @MainActor in
-                    let ciContext = CIContext()
-                    guard let cgImage = ciContext.createCGImage(ciImage, from: ciImage.extent) else { return }
-                    previewImage = Image(decorative: cgImage, scale: 1)
-
-                    if let YOLOv11nModel = self.YOLOv11Model {
-                        // Create a VNCoreMLRequest with the YOLOv11 model
-                        let request = VNCoreMLRequest(model: YOLOv11nModel) { (request, error) in
-                            if let error = error {
-                                logger.error("Failed to process detection model: \(error)")
-                                self.status = .error
-                                return
-                            }
-                            
-                            // Process the results
-                            if let results = request.results as? [VNRecognizedObjectObservation] {
-                                // get results with confidence > 0.9
-                                let results = results.filter { $0.labels[0].confidence > 0.9 }
-                                // convert the results to RecognizedObject
-                                self.recognizedObjects = results.map { $0.toRecognizedObject($0) }
-                                self.uniqueLabels = Set(results.map{$0.labels[0].identifier})
-                            }
-                        }
-                        // Create a VNImageRequestHandler with the previewImage
-                        let handler = VNImageRequestHandler(ciImage: ciImage, options: [:])
-                        // Perform the request
-                        do {
-                            try handler.perform([request])
-                        } catch {
-                            print("Failed to perform request: \(error)")
-                            self.status = .error
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
 
-struct RecognizedObject: Identifiable {
-    var id: UUID = UUID()
-    var label: String
-    var boundingBox: CGRect
-}
-
-extension VNRecognizedObjectObservation {
-    // Convert a VNRecognizedObjectObservation to a RecognizedObject
-    func toRecognizedObject(_ observation: VNRecognizedObjectObservation) -> RecognizedObject {
-        let firstLabel = observation.labels.first?.identifier ?? "unknown"
-        // add label to display in top nav
-        return RecognizedObject(label: firstLabel, boundingBox: observation.boundingBox)
-    }
-}
-
-fileprivate let logger = Logger(subsystem: "com.enigmaai.SecondSight", category: "DetectionView")
