@@ -11,18 +11,17 @@ import UIKit
 
 struct DetectionView: View {
     @StateObject private var detectionModel = DetectionModel()
+    private let synthesizer = AVSpeechSynthesizer()
     @State private var showSettings = false
     @State private var description: String? = nil
-    @State private var state: AppState = AppState.ready
+    @State private var appState: AppState = AppState.ready
     private var errorMessage: String = "Error running detection!"
-    private var pauseMessage: String? = "Detection paused"
+    private var pauseMessage: String? = "Detection is paused"
     private var resumeMessage: String? = "Detection in progress"
-    private let synthesizer = AVSpeechSynthesizer()
     
     enum AppState { // different state the app can be in
-        case error, ready, progress, speech, paused, stopped
+        case error, ready, progress, speech, paused
     }
-    
     
     var body: some View {
         ZStack {
@@ -46,10 +45,10 @@ struct DetectionView: View {
                 .ignoresSafeArea()
                 .background(.black)
                 .onDisappear {
-                    detectionModel.stop()
+                    pauseDetection()
                 }
                 .onAppear {
-                    detectionModel.start()
+                    resumeDetection()
                 }
             }
             
@@ -68,13 +67,14 @@ struct DetectionView: View {
                     
                     Spacer()
                     
+                    // case error, ready, progress, speech, paused, stopped
                     var statusImage: String {
-                        switch detectionModel.status {
-                        case .running:
+                        switch appState {
+                        case .progress:
                             return "StatusInProgress"
-//                        case .speech:
-//                            return "StatusSpeech"
-                        case .stopped:
+                        case .speech:
+                            return "StatusSpeech"
+                        case .paused:
                             return "StatusStopped"
                         case .error:
                             return "StatusError"
@@ -95,8 +95,9 @@ struct DetectionView: View {
                 Spacer()
                 
                 // Display message
-                if let message = detectionModel.status == .running ? description
-                    : detectionModel.status == .stopped ? pauseMessage : errorMessage {
+                if let message = appState == .progress || appState == .speech
+                    ? description : appState == .paused
+                    ? pauseMessage : errorMessage {
                    Text(message)
                         .font(.headline)
                         .foregroundColor(.white)
@@ -105,7 +106,7 @@ struct DetectionView: View {
                         .background(Color.black.opacity(0.75))
                         .padding(.bottom, 20)
                     
-                    if detectionModel.status != .running {
+                    if appState != .progress && appState != .speech {
                         // display message at center
                         Spacer()
                     }
@@ -208,6 +209,7 @@ struct DetectionView: View {
         .onChange(of: detectionModel.uniqueLabels) {
             alertHazards(newObjects:detectionModel.recognizedObjects)
         }
+        .allowsHitTesting(appState != .speech)
     }
 
     private func alertHazards(newObjects: [RecognizedObject]) {
@@ -223,10 +225,9 @@ struct DetectionView: View {
                 generator.prepare()
                 generator.impactOccurred()
                 
-                description = "Detected " +  detectionModel.uniqueLabels.joined(separator: ", ")
-                await speak(text: description!) // use delegate to timeout
+                let hazardMessage = "Detected " +  detectionModel.uniqueLabels.joined(separator: ", ")
+                await speak(text: hazardMessage) // use delegate to timeout
             }
-            description = nil
         }
     }
     
@@ -254,15 +255,14 @@ struct DetectionView: View {
     private func pauseDetection() {
         Task {
             detectionModel.stop()
-            state = .paused
-            await speak(text: pauseMessage!)
+            appState = .paused
         }
     }
     
     private func resumeDetection() {
         Task{
             detectionModel.start()
-            await speak(text: resumeMessage!)
+            appState = .progress
         }
     }
     
@@ -270,15 +270,24 @@ struct DetectionView: View {
         showSettings = true
     }
     
-    private func speak(text: String) async {
-        if description != nil {
-            if (synthesizer.isSpeaking) {
-                synthesizer.stopSpeaking(at: .immediate); // Or wait for `onend` event
-            }
-            
-            let utterance = AVSpeechUtterance(string: description!)
-            utterance.voice = AVSpeechSynthesisVoice(language: "en-AU") // You can change the language
-            synthesizer.speak(utterance)
+    private func speak(text: String, duration: Int = 2) async {
+        if (synthesizer.isSpeaking) {
+            synthesizer.stopSpeaking(at: .immediate); // Or wait for `onend` event
+        }
+        
+        let utterance = AVSpeechUtterance(string: text)
+        utterance.voice = AVSpeechSynthesisVoice(language: "en-AU") // You can change the language
+        
+        appState = .speech
+        detectionModel.stop()
+        synthesizer.speak(utterance)
+        description = text
+        
+        // hack to give it sometime to finish speaking, delegate is not compatible with UI
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(duration)) {
+            synthesizer.stopSpeaking(at: .immediate);
+            resumeDetection()
+            description = nil
         }
     }
     
@@ -304,6 +313,4 @@ struct DetectionView: View {
         let flippedY = 1.0 - normalizedCGRect.maxY
         return CGRect(x: normalizedCGRect.minX * imageViewWidth, y: flippedY * imageViewHeight, width: normalizedCGRect.width * imageViewWidth, height: normalizedCGRect.height * imageViewHeight)
     }
-    
 }
-
