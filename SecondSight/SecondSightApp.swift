@@ -29,4 +29,13 @@ struct SecondSightApp: App {
         }
         .modelContainer(sharedModelContainer)
     }
+    
+    init() {        
+        if NetworkMonitor.shared.isConnected {
+            print("✅ Internet connection available.")
+        } else {
+            print("❌ No internet connection.")
+        }
+        
+    }
 }

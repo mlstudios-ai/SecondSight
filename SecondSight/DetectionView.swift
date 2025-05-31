@@ -11,6 +11,8 @@ import UIKit
 
 struct DetectionView: View {
     @StateObject private var detectionModel = DetectionModel()
+    @StateObject private var sceneModel = SceneModel()
+    @State private var endpoint: String = Endpoint.enigmaAI
     private let synthesizer = AVSpeechSynthesizer()
     @State private var showSettings = false
     @State private var description: String? = nil
@@ -154,6 +156,7 @@ struct DetectionView: View {
                     Spacer()
                     
                     Button(action: {    // resume detection
+                        resumeDetection()
                         Task {
                             await speakStatus(text: resumeMessage)
                         }
@@ -204,12 +207,12 @@ struct DetectionView: View {
         .gesture( // pause/resume detection
             DragGesture(minimumDistance: 30, coordinateSpace: .local)
                 .onEnded { value in
-                    if value.translation.height < 0 { // swipe up - pause
+                    if value.translation.height < 0 { // swipe up - resume
                         resumeDetection()
                         Task {
                             await speakStatus(text: resumeMessage)
                         }
-                    } else if value.translation.height > 0 { // swipe down - resume
+                    } else if value.translation.height > 0 { // swipe down - pause
                         pauseDetection()
                         Task {
                             await speakStatus(text: pauseMessage)
@@ -220,9 +223,9 @@ struct DetectionView: View {
         .onLongPressGesture {  // option popup
             showSettingsPopup()
         }
-        .onTapGesture { // describe scene
+        .gesture(TwoFingerTapGesture {
             describeScene()
-        }
+        })
         .onChange(of: detectionModel.uniqueLabels) {
             alertHazards(newObjects:detectionModel.recognizedObjects)
         }
@@ -232,10 +235,8 @@ struct DetectionView: View {
     private func alertHazards(newObjects: [RecognizedObject]) {
         Task {
             if !newObjects.isEmpty {
-                var generator = UIImpactFeedbackGenerator(style: .light) // 1 hazard
-                if newObjects.count > 1 { // two or more hazards
-                    generator = UIImpactFeedbackGenerator(style: .medium)
-                } else if newObjects.count > 3 { // 4 or more hazards
+                var generator = UIImpactFeedbackGenerator(style: .medium)
+                if newObjects.count > 2 { // 3 or more hazards
                     generator = UIImpactFeedbackGenerator(style: .heavy)
                 }
                 
@@ -251,25 +252,60 @@ struct DetectionView: View {
     /**
      Describe the detected object in the secene. If no objects, it descibes the scene normally.
      */
-    private func describeScene() {//
-//        if detectionModel.status == .running && description != nil {
-//            Task {
-//                // TODO: pause detection
-////                sceneModel.infer()
-//                await speak(text: description!)
-//                description = nil
-//            }
-//        }
-//            // TODO: check internet connection and endpoint connection
-//            // TODO: pause to allow speech and reading time
-//            // TODO: make message disappear after a time interval
-//            // TODO: make message disappear when object is no longer detected
-//            // TODO: replease message when new objects are detected.
-//            // TODO: replease message when new objects are detected.
-//            // TODO: consider skip frame
+    private func describeScene() {
+        guard appState == .progress || appState == .speech else {
+            return
+        }
+        
+        guard NetworkMonitor.shared.isConnected else {
+            print("❌ No internet connection.")
+            Task {
+                await speak(text: "No internet connection. Please try again later.", duration:3)
+            }
+            return
+        }
+        
+        var focus = detectionModel.stillLabels.joined(separator: ", ")
+        var prompt: String = "Describe the image."
+        
+        if !detectionModel.stillLabels.isEmpty {
+            prompt = "Describe the picture focus on \(focus)."
+        }
+        
+        var image = UIImage(cgImage: detectionModel.stillCgiImage!)
+        
+        if appState != .speech {
+            focus = detectionModel.uniqueLabels.joined(separator: ", ")
+            prompt = "Describe the image."
+            
+            if !detectionModel.uniqueLabels.isEmpty {
+                prompt = "Describe the picture focus on \(focus)."
+            }
+            
+            image = UIImage(cgImage: detectionModel.previewCgiImage!)
+        }
+                                                       
+        sceneModel.infer(image: image, prompt: prompt) { generatedText in
+            guard !generatedText.isEmpty else {
+                print("❌ Failed to generate text.")
+                return
+            }
+            
+            DispatchQueue.main.async {
+                print("Scene description:", generatedText)
+                // Update your UI here
+                Task {
+                    await speak(text: generatedText, duration:12)
+                }
+            }
+        }
     }
     
     private func pauseDetection() {
+        guard appState != .paused else {
+            return
+        }
+        
         Task {
             detectionModel.stop()
             appState = .paused
@@ -277,6 +313,10 @@ struct DetectionView: View {
     }
     
     private func resumeDetection() {
+        guard appState != .progress else {
+            return
+        }
+        
         Task{
             detectionModel.start()
             appState = .progress
@@ -284,6 +324,10 @@ struct DetectionView: View {
     }
     
     private func showSettingsPopup() {
+        guard showSettings == false else {
+            return
+        }
+        
         showSettings = true
     }
     
@@ -349,5 +393,27 @@ struct DetectionView: View {
         // Flip the Y coordinate, because the Vision framework uses a coordinate system with the origin in the bottom-left corner, while the SwiftUI uses a coordinate system with the origin in the top-left corner.
         let flippedY = 1.0 - normalizedCGRect.maxY
         return CGRect(x: normalizedCGRect.minX * imageViewWidth, y: flippedY * imageViewHeight, width: normalizedCGRect.width * imageViewWidth, height: normalizedCGRect.height * imageViewHeight)
+    }
+}
+
+struct TwoFingerTapGesture: UIGestureRecognizerRepresentable {
+    let action: () -> Void
+
+    func makeUIGestureRecognizer(context: Context) -> some UIGestureRecognizer {
+        let gesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleGesture))
+        gesture.numberOfTouchesRequired = 2
+        return gesture
+    }
+
+    func updateUIGestureRecognizer(_ uiGestureRecognizer: UIGestureRecognizer, context: Context) {}
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator {
+        Coordinator(action: action)
+    }
+
+    class Coordinator: NSObject {
+        let action: () -> Void
+        init(action: @escaping () -> Void) { self.action = action }
+        @objc func handleGesture() { action() }
     }
 }

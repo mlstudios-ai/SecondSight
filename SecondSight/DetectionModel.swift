@@ -16,9 +16,15 @@ import CoreML
 // Detection Handler
 @MainActor
 class DetectionModel : ObservableObject {
+    private var YOLOv11Model: VNCoreMLModel?
+    let camera = Camera()
+    @Published var stillLabels: Set<String> = []
     @Published var previewImage: Image?
+    @Published var stillCgiImage: CGImage?
+    @Published var previewCgiImage: CGImage?
     @Published var recognizedObjects: [RecognizedObject] = []
     @Published var uniqueLabels: Set<String> = []
+    @Published var status: DetectionStatus = .ready
     
     // Event handlers
     var onStart: (() -> Void)?
@@ -26,16 +32,12 @@ class DetectionModel : ObservableObject {
     var onDetected: (([RecognizedObject]) -> Void)?
     
     enum DetectionStatus {
-            case ready, running, stopped, error
-        }
-    
-    @Published var status: DetectionStatus = .ready
-    
-    private var YOLOv11Model: VNCoreMLModel?
-    let camera = Camera()
+        case ready, running, stopped, error
+    }
     
     init() {
-        if let model = try? DetectionYOLO11n().model {
+        let config = MLModelConfiguration()
+        if let model = try? YOLO11nDetectionModel(configuration: config).model {
             if let vnModel = try? VNCoreMLModel(for: model) {
                 YOLOv11Model = vnModel
             }
@@ -65,6 +67,8 @@ class DetectionModel : ObservableObject {
     // stop detection
     public func stop() {
         if self.status != .error {
+            stillCgiImage = previewCgiImage
+            stillLabels = uniqueLabels
             camera.stop()
             status = .stopped
         }
@@ -77,6 +81,7 @@ class DetectionModel : ObservableObject {
             Task { @MainActor in
                 let ciContext = CIContext()
                 guard let cgImage = ciContext.createCGImage(ciImage, from: ciImage.extent) else { return }
+                previewCgiImage = cgImage
                 previewImage = Image(decorative: cgImage, scale: 1)
 
                 if let YOLOv11nModel = self.YOLOv11Model {
@@ -91,14 +96,21 @@ class DetectionModel : ObservableObject {
                         // Process the results
                         if let results = request.results as? [VNRecognizedObjectObservation] {
                             // get results with confidence > 0.9
-                            let results = results.filter { $0.labels[0].confidence > 0.9 }
+//                            let results = results.filter { $0.labels[0].confidence > 0.9 }
+                            let results = results.filter { observation in
+                                observation.labels.first?.confidence ?? 0 > 0.8
+//                                && observation.confidence > 0.75
+                            }
+                            
+                            for observation in results {
+                                if let topLabel = observation.labels.first {
+                                    print("\(topLabel.identifier) detected with confidence \(topLabel.confidence)")
+                                    print("BBOX confidence \(observation.confidence)")
+                                }
+                            }
                             // convert the results to RecognizedObject
                             self.recognizedObjects = results.map { $0.toRecognizedObject($0) }
                             self.uniqueLabels = Set(results.map{$0.labels[0].identifier})
-                            
-//                            if !recognizedObjects.isEmpty {
-//                                onDetected(recognizedObjects??)
-//                            }
                         }
                     }
                     // Create a VNImageRequestHandler with the previewImage
