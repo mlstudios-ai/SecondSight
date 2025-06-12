@@ -10,13 +10,16 @@ import SwiftData
 
 struct ContentView: View {
     @State private var isLaunching = true
+    private let splashView = SplashScreenView()
+    private let detectionView = DetectionView()
+    
 //    @Environment(\.modelContext) private var modelContext
     var body: some View {
         ZStack {
             if isLaunching {
-                SplashScreenView()
+                splashView
             } else {
-                DetectionView()
+                detectionView
             }
         }
         .onAppear {

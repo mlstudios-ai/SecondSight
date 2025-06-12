@@ -12,14 +12,17 @@ import UIKit
 struct DetectionView: View {
     @StateObject private var detectionModel = DetectionModel()
     @StateObject private var sceneModel = SceneModel()
+    @ObservedObject private var connectivityManager = WatchConnectivityManager.shared
     @State private var endpoint: String = Endpoint.enigmaAI
+    @State private var dragStartTime : Date? = nil
     private let synthesizer = AVSpeechSynthesizer()
     @State private var showSettings = false
     @State private var description: String? = nil
     @State private var appState: AppState = AppState.ready
-    private let errorMessage: String = "Error running detection!"
-    private let pauseMessage: String = "Detection is paused"
-    private let resumeMessage: String = "Detection is in progress"
+    @State private var displayVideo: Bool = true
+    private let errorMessage: String = "Error!"
+    private let pauseMessage: String = "Paused"
+    private let resumeMessage: String = "In progress"
     
     enum AppState { // different state the app can be in
         case error, ready, progress, speech, paused
@@ -30,7 +33,7 @@ struct DetectionView: View {
             ZStack {
                 // Detection area
                 GeometryReader { geometry in
-                    if let previewImage = detectionModel.previewImage {
+                    if displayVideo, let previewImage = detectionModel.previewImage {
                         previewImage
                             .resizable()
                             .scaledToFit()
@@ -42,6 +45,28 @@ struct DetectionView: View {
                                     }
                                 }
                             }
+                    } else {
+                        // case error, ready, progress, speech, paused, stopped
+                        var statusMessage: String {
+                            switch appState {
+                            case .progress:
+                                return "Detection in progress"
+                            case .speech:
+                                return "Speaking..."
+                            case .paused:
+                                return "Detection paused"
+                            case .error:
+                                return "Error"
+                            default:
+                                return ""
+                            }
+                        }
+                        
+                        Text(statusMessage)
+                            .font(.title2).bold()
+                            .foregroundColor(.white)
+                            .scaledToFit()
+                            .frame(width: geometry.size.width, height: geometry.size.height)
                     }
                 }
                 .ignoresSafeArea()
@@ -106,14 +131,16 @@ struct DetectionView: View {
                 if let message = appState == .progress || appState == .speech
                     ? description : appState == .paused
                     ? pauseMessage : errorMessage {
-                   Text(message)
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .padding(5)
-                        .frame(alignment: .center)
-                        .background(Color.black.opacity(0.75))
-                        .padding(.bottom, 20)
                     
+                    if displayVideo || (!displayVideo && appState == .speech) {
+                        Text(message)
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .padding(5)
+                            .frame(alignment: .center)
+                            .background(Color.black.opacity(0.75))
+                            .padding(.bottom, 20)
+                    }
                     if appState != .speech {
                         // display message at center
                         Spacer()
@@ -122,9 +149,7 @@ struct DetectionView: View {
                 
                 // Bottom Tab Bar
                 HStack {
-                    Button(action: {
-                        describeScene()
-                    }) {
+                    Button(action: describeAction) {
                         HStack {
                             Image("GestureTap")
                                 .resizable()
@@ -137,12 +162,7 @@ struct DetectionView: View {
                     
                     Spacer()
                     
-                    Button(action: {    // pause detection
-                        pauseDetection()
-                        Task {
-                            await speakStatus(text: pauseMessage)
-                        }
-                    }) {
+                    Button(action:pauseDetectionAction) {
                         HStack {
                             Image("GestureSwipeDown")
                                 .resizable()
@@ -155,12 +175,7 @@ struct DetectionView: View {
                     
                     Spacer()
                     
-                    Button(action: {    // resume detection
-                        resumeDetection()
-                        Task {
-                            await speakStatus(text: resumeMessage)
-                        }
-                    }) {
+                    Button(action: resumeDetectionAction) {
                         HStack {
                             Image("GestureSwipeUp")
                                 .resizable()
@@ -173,65 +188,100 @@ struct DetectionView: View {
                     
                     Spacer()
                     
-                    Button(action: {    // show settings configs
-                        showSettingsPopup()
-                    }) {
+                    Button(action: displayAction) {
                         HStack {
                             Image("GestureHold")
                                 .resizable()
                                 .frame(width: 32, height: 32)
-                            Text("Settings")
+                            Text("Display")
                                 .font(.headline)
                         }
                     }
-                    .accessibilityLabel("Open Settings")
+                    .accessibilityLabel("Toggle Display")
                 }
                 .frame(height: 54)
                 .padding(.horizontal, 24)
                 .background(Color.black.opacity(0.75))
                 .foregroundColor(.white)
             }
-            .sheet(isPresented: $showSettings) {
-                SettingsView(onClose: {
-                    showSettings = false
-                    print("Settings view closed")
-                })
-                .presentationBackground(.clear)
-                .padding(.vertical, 54)
-                .padding(.horizontal, 24)
-                .foregroundColor(.black)
-                
-            }
             .backgroundStyle(Color.black.opacity(0.85))
         }
         .gesture( // pause/resume detection
-            DragGesture(minimumDistance: 30, coordinateSpace: .local)
+            DragGesture(minimumDistance: 0, coordinateSpace: .local)
+                .onChanged { _ in
+                    dragStartTime = Date()
+                }
                 .onEnded { value in
-                    if value.translation.height < 0 { // swipe up - resume
+                    let dragDuration = Date().timeIntervalSince(dragStartTime!)
+                    if dragDuration > 0.4 { // long press
+                        displayAction()
+                    } else if value.translation.height < -2 { // swipe up - resume
                         resumeDetection()
                         Task {
                             await speakStatus(text: resumeMessage)
                         }
-                    } else if value.translation.height > 0 { // swipe down - pause
+                    } else if value.translation.height > 2 { // swipe down - pause
                         pauseDetection()
                         Task {
                             await speakStatus(text: pauseMessage)
                         }
+                    } else { // tap - describe scene
+                        describeScene()
                     }
                 }
         )
-        .onLongPressGesture {  // option popup
-            showSettingsPopup()
-        }
-        .gesture(TwoFingerTapGesture {
-            describeScene()
-        })
         .onChange(of: detectionModel.uniqueLabels) {
             alertHazards(newObjects:detectionModel.recognizedObjects)
+            updateWatchLabel()
         }
-        .allowsHitTesting(appState != .speech)
+        .onChange(of: appState) {
+            updateWatchState()
+        }
+        .onReceive(connectivityManager.$notificationMessage) { message in
+            guard let command = message else { return }
+            
+            switch command.text {
+            case WatchConnectivityManager.Command.describe.rawValue:
+                describeAction()
+                return
+            case WatchConnectivityManager.Command.pause.rawValue:
+                pauseDetectionAction()
+                return
+            case WatchConnectivityManager.Command.resume.rawValue:
+                resumeDetectionAction()
+                return
+            case WatchConnectivityManager.Command.display.rawValue:
+                displayAction()
+                return
+            default:
+                return
+            }
+        }
+//        .allowsHitTesting(appState != .speech)
     }
 
+    private func describeAction() {
+            describeScene()
+    }
+    
+    private func pauseDetectionAction() {
+        pauseDetection()
+        Task {
+            await speakStatus(text: pauseMessage)
+        }
+    }
+    
+    private func resumeDetectionAction() {
+        resumeDetection()
+        Task {
+            await speakStatus(text: resumeMessage)
+        }
+    }
+    
+    private func displayAction() {
+        toggleDisplay()
+    }
+    
     private func alertHazards(newObjects: [RecognizedObject]) {
         Task {
             if !newObjects.isEmpty {
@@ -243,7 +293,7 @@ struct DetectionView: View {
                 generator.prepare()
                 generator.impactOccurred()
                 
-                let hazardMessage = "Detected " +  detectionModel.uniqueLabels.joined(separator: ", ")
+                let hazardMessage = detectionModel.uniqueLabels.joined(separator: ", ")
                 await speak(text: hazardMessage) // use delegate to timeout
             }
         }
@@ -260,7 +310,7 @@ struct DetectionView: View {
         guard NetworkMonitor.shared.isConnected else {
             print("❌ No internet connection.")
             Task {
-                await speak(text: "No internet connection. Please try again later.", duration:3)
+                await speak(text: "No internet connection. Please try again later.")
             }
             return
         }
@@ -272,7 +322,7 @@ struct DetectionView: View {
             prompt = "Describe the picture focus on \(focus)."
         }
         
-        var image = UIImage(cgImage: detectionModel.stillCgiImage!)
+        var image = UIImage(cgImage: detectionModel.previewCgiImage!)
         
         if appState != .speech {
             focus = detectionModel.uniqueLabels.joined(separator: ", ")
@@ -281,13 +331,16 @@ struct DetectionView: View {
             if !detectionModel.uniqueLabels.isEmpty {
                 prompt = "Describe the picture focus on \(focus)."
             }
-            
-            image = UIImage(cgImage: detectionModel.previewCgiImage!)
+        } else {
+            image = UIImage(cgImage: detectionModel.stillCgiImage!)
         }
                                                        
         sceneModel.infer(image: image, prompt: prompt) { generatedText in
             guard !generatedText.isEmpty else {
                 print("❌ Failed to generate text.")
+                Task {
+                    await speak(text: "Description not available. Please try again later.")
+                }
                 return
             }
             
@@ -323,12 +376,8 @@ struct DetectionView: View {
         }
     }
     
-    private func showSettingsPopup() {
-        guard showSettings == false else {
-            return
-        }
-        
-        showSettings = true
+    private func toggleDisplay() {
+        displayVideo.toggle()
     }
     
     private func speak(text: String, duration: Int = 2) async {
@@ -344,8 +393,15 @@ struct DetectionView: View {
         synthesizer.speak(utterance)
         description = text
         
+        // speechsynthesizer delegate has issues with the UI
+        // hence, calculate time for speech
+        let wordCount = text.split(separator: " ").count
+        let wordTime: Int = 800 // average time for speaking a word
+        let maxSpeechTime = 3000 // maximum 3 seconds
+        let speechTime =  min(wordCount * wordTime, maxSpeechTime)  // total time for the speech
+        
         // hack to give it sometime to finish speaking, delegate is not compatible with UI
-        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(duration)) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(speechTime)) {
             synthesizer.stopSpeaking(at: .immediate);
             resumeDetection()
             description = nil
@@ -364,12 +420,38 @@ struct DetectionView: View {
         description = text
         
         // hack to give it sometime to finish speaking, delegate is not compatible with UI
-        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2)) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(800)) {
             synthesizer.stopSpeaking(at: .immediate);
             if appState == .progress {
                 description = nil
             }
         }
+    }
+    
+    private func updateWatchLabel() {
+        let labelKey = WatchConnectivityManager.MessageKey.label.rawValue
+        let labelText = detectionModel.uniqueLabels.joined(separator: ", ")
+        WatchConnectivityManager.shared.send(labelKey, labelText)
+    }
+    
+    private func updateWatchState() {
+        let stateKey = WatchConnectivityManager.MessageKey.state.rawValue
+        var stateText = WatchConnectivityManager.AppState.ready.rawValue
+        
+        switch appState {
+        case .progress:
+            stateText = WatchConnectivityManager.AppState.progress.rawValue
+        case .paused:
+            stateText = WatchConnectivityManager.AppState.paused.rawValue
+        case .speech:
+            stateText = WatchConnectivityManager.AppState.speech.rawValue
+        case .error:
+            stateText = WatchConnectivityManager.AppState.error.rawValue
+        default:
+            break
+        }
+        
+        WatchConnectivityManager.shared.send(stateKey, stateText)
     }
     
     // Draw a bounding box around the recognized object

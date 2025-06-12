@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A48891C02DF7F0D100AC608C /* SecondSightController Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = A488919D2DF7F0D000AC608C /* SecondSightController Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		A417299F2D9181B800AF5601 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -21,15 +25,60 @@
 			remoteGlobalIDString = A417298B2D9181B700AF5601;
 			remoteInfo = SecondSight;
 		};
+		A48891AD2DF7F0D100AC608C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A41729842D9181B700AF5601 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A488919C2DF7F0D000AC608C;
+			remoteInfo = "SecondSightController Watch App";
+		};
+		A48891B72DF7F0D100AC608C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A41729842D9181B700AF5601 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A488919C2DF7F0D000AC608C;
+			remoteInfo = "SecondSightController Watch App";
+		};
+		A48891BE2DF7F0D100AC608C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A41729842D9181B700AF5601 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A488919C2DF7F0D000AC608C;
+			remoteInfo = "SecondSightController Watch App";
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A48891C12DF7F0D100AC608C /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				A48891C02DF7F0D100AC608C /* SecondSightController Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		A417298C2D9181B700AF5601 /* SecondSight.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SecondSight.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A417299E2D9181B800AF5601 /* SecondSightTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SecondSightTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A41729A82D9181B800AF5601 /* SecondSightUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SecondSightUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A488919D2DF7F0D000AC608C /* SecondSightController Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "SecondSightController Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		A48891AC2DF7F0D100AC608C /* SecondSightController Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "SecondSightController Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		A48891B62DF7F0D100AC608C /* SecondSightController Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "SecondSightController Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		A449B7382DF8694F001CB0B9 /* Exceptions for "Shared" folder in "SecondSightController Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				WatchConnectivityManager.swift,
+			);
+			target = A488919C2DF7F0D000AC608C /* SecondSightController Watch App */;
+		};
 		A4F2FFB42DCB146C00E1606D /* Exceptions for "SecondSight" folder in "SecondSight" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -58,6 +107,29 @@
 			path = SecondSightUITests;
 			sourceTree = "<group>";
 		};
+		A449B7322DF86801001CB0B9 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A449B7382DF8694F001CB0B9 /* Exceptions for "Shared" folder in "SecondSightController Watch App" target */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		A488919E2DF7F0D000AC608C /* SecondSightController Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "SecondSightController Watch App";
+			sourceTree = "<group>";
+		};
+		A48891AF2DF7F0D100AC608C /* SecondSightController Watch AppTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "SecondSightController Watch AppTests";
+			sourceTree = "<group>";
+		};
+		A48891B92DF7F0D100AC608C /* SecondSightController Watch AppUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "SecondSightController Watch AppUITests";
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -82,15 +154,40 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A488919A2DF7F0D000AC608C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A48891A92DF7F0D100AC608C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A48891B32DF7F0D100AC608C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		A41729832D9181B700AF5601 = {
 			isa = PBXGroup;
 			children = (
+				A449B7322DF86801001CB0B9 /* Shared */,
 				A417298E2D9181B700AF5601 /* SecondSight */,
 				A41729A12D9181B800AF5601 /* SecondSightTests */,
 				A41729AB2D9181B800AF5601 /* SecondSightUITests */,
+				A488919E2DF7F0D000AC608C /* SecondSightController Watch App */,
+				A48891AF2DF7F0D100AC608C /* SecondSightController Watch AppTests */,
+				A48891B92DF7F0D100AC608C /* SecondSightController Watch AppUITests */,
 				A417298D2D9181B700AF5601 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -101,6 +198,9 @@
 				A417298C2D9181B700AF5601 /* SecondSight.app */,
 				A417299E2D9181B800AF5601 /* SecondSightTests.xctest */,
 				A41729A82D9181B800AF5601 /* SecondSightUITests.xctest */,
+				A488919D2DF7F0D000AC608C /* SecondSightController Watch App.app */,
+				A48891AC2DF7F0D100AC608C /* SecondSightController Watch AppTests.xctest */,
+				A48891B62DF7F0D100AC608C /* SecondSightController Watch AppUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -115,13 +215,16 @@
 				A41729882D9181B700AF5601 /* Sources */,
 				A41729892D9181B700AF5601 /* Frameworks */,
 				A417298A2D9181B700AF5601 /* Resources */,
+				A48891C12DF7F0D100AC608C /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				A48891BF2DF7F0D100AC608C /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				A417298E2D9181B700AF5601 /* SecondSight */,
+				A449B7322DF86801001CB0B9 /* Shared */,
 			);
 			name = SecondSight;
 			packageProductDependencies = (
@@ -176,6 +279,74 @@
 			productReference = A41729A82D9181B800AF5601 /* SecondSightUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		A488919C2DF7F0D000AC608C /* SecondSightController Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A48891C82DF7F0D100AC608C /* Build configuration list for PBXNativeTarget "SecondSightController Watch App" */;
+			buildPhases = (
+				A48891992DF7F0D000AC608C /* Sources */,
+				A488919A2DF7F0D000AC608C /* Frameworks */,
+				A488919B2DF7F0D000AC608C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A488919E2DF7F0D000AC608C /* SecondSightController Watch App */,
+			);
+			name = "SecondSightController Watch App";
+			packageProductDependencies = (
+			);
+			productName = "SecondSightController Watch App";
+			productReference = A488919D2DF7F0D000AC608C /* SecondSightController Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A48891AB2DF7F0D100AC608C /* SecondSightController Watch AppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A48891C92DF7F0D100AC608C /* Build configuration list for PBXNativeTarget "SecondSightController Watch AppTests" */;
+			buildPhases = (
+				A48891A82DF7F0D100AC608C /* Sources */,
+				A48891A92DF7F0D100AC608C /* Frameworks */,
+				A48891AA2DF7F0D100AC608C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A48891AE2DF7F0D100AC608C /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A48891AF2DF7F0D100AC608C /* SecondSightController Watch AppTests */,
+			);
+			name = "SecondSightController Watch AppTests";
+			packageProductDependencies = (
+			);
+			productName = "SecondSightController Watch AppTests";
+			productReference = A48891AC2DF7F0D100AC608C /* SecondSightController Watch AppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		A48891B52DF7F0D100AC608C /* SecondSightController Watch AppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A48891CA2DF7F0D100AC608C /* Build configuration list for PBXNativeTarget "SecondSightController Watch AppUITests" */;
+			buildPhases = (
+				A48891B22DF7F0D100AC608C /* Sources */,
+				A48891B32DF7F0D100AC608C /* Frameworks */,
+				A48891B42DF7F0D100AC608C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A48891B82DF7F0D100AC608C /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A48891B92DF7F0D100AC608C /* SecondSightController Watch AppUITests */,
+			);
+			name = "SecondSightController Watch AppUITests";
+			packageProductDependencies = (
+			);
+			productName = "SecondSightController Watch AppUITests";
+			productReference = A48891B62DF7F0D100AC608C /* SecondSightController Watch AppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -197,6 +368,17 @@
 						CreatedOnToolsVersion = 16.1;
 						TestTargetID = A417298B2D9181B700AF5601;
 					};
+					A488919C2DF7F0D000AC608C = {
+						CreatedOnToolsVersion = 16.1;
+					};
+					A48891AB2DF7F0D100AC608C = {
+						CreatedOnToolsVersion = 16.1;
+						TestTargetID = A488919C2DF7F0D000AC608C;
+					};
+					A48891B52DF7F0D100AC608C = {
+						CreatedOnToolsVersion = 16.1;
+						TestTargetID = A488919C2DF7F0D000AC608C;
+					};
 				};
 			};
 			buildConfigurationList = A41729872D9181B700AF5601 /* Build configuration list for PBXProject "SecondSight" */;
@@ -216,6 +398,9 @@
 				A417298B2D9181B700AF5601 /* SecondSight */,
 				A417299D2D9181B800AF5601 /* SecondSightTests */,
 				A41729A72D9181B800AF5601 /* SecondSightUITests */,
+				A488919C2DF7F0D000AC608C /* SecondSightController Watch App */,
+				A48891AB2DF7F0D100AC608C /* SecondSightController Watch AppTests */,
+				A48891B52DF7F0D100AC608C /* SecondSightController Watch AppUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -236,6 +421,27 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A41729A62D9181B800AF5601 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A488919B2DF7F0D000AC608C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A48891AA2DF7F0D100AC608C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A48891B42DF7F0D100AC608C /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -266,6 +472,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A48891992DF7F0D000AC608C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A48891A82DF7F0D100AC608C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A48891B22DF7F0D100AC608C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -278,6 +505,21 @@
 			isa = PBXTargetDependency;
 			target = A417298B2D9181B700AF5601 /* SecondSight */;
 			targetProxy = A41729A92D9181B800AF5601 /* PBXContainerItemProxy */;
+		};
+		A48891AE2DF7F0D100AC608C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A488919C2DF7F0D000AC608C /* SecondSightController Watch App */;
+			targetProxy = A48891AD2DF7F0D100AC608C /* PBXContainerItemProxy */;
+		};
+		A48891B82DF7F0D100AC608C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A488919C2DF7F0D000AC608C /* SecondSightController Watch App */;
+			targetProxy = A48891B72DF7F0D100AC608C /* PBXContainerItemProxy */;
+		};
+		A48891BF2DF7F0D100AC608C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A488919C2DF7F0D000AC608C /* SecondSightController Watch App */;
+			targetProxy = A48891BE2DF7F0D100AC608C /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -549,6 +791,144 @@
 			};
 			name = Release;
 		};
+		A48891C22DF7F0D100AC608C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"SecondSightController Watch App/Preview Content\"";
+				DEVELOPMENT_TEAM = 3N439TZJVQ;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = SecondSightController;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.enigmaai.SecondSight;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.enigmaai.SecondSight.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.1;
+			};
+			name = Debug;
+		};
+		A48891C32DF7F0D100AC608C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"SecondSightController Watch App/Preview Content\"";
+				DEVELOPMENT_TEAM = 3N439TZJVQ;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = SecondSightController;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.enigmaai.SecondSight;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.enigmaai.SecondSight.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.1;
+			};
+			name = Release;
+		};
+		A48891C42DF7F0D100AC608C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3N439TZJVQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.enigmaai.SecondSightController-Watch-AppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SecondSightController Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SecondSightController Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 11.1;
+			};
+			name = Debug;
+		};
+		A48891C52DF7F0D100AC608C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3N439TZJVQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.enigmaai.SecondSightController-Watch-AppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SecondSightController Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SecondSightController Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 11.1;
+			};
+			name = Release;
+		};
+		A48891C62DF7F0D100AC608C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3N439TZJVQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.enigmaai.SecondSightController-Watch-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = "SecondSightController Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 11.1;
+			};
+			name = Debug;
+		};
+		A48891C72DF7F0D100AC608C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3N439TZJVQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.enigmaai.SecondSightController-Watch-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = "SecondSightController Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 11.1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -584,6 +964,33 @@
 			buildConfigurations = (
 				A41729B92D9181B800AF5601 /* Debug */,
 				A41729BA2D9181B800AF5601 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A48891C82DF7F0D100AC608C /* Build configuration list for PBXNativeTarget "SecondSightController Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A48891C22DF7F0D100AC608C /* Debug */,
+				A48891C32DF7F0D100AC608C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A48891C92DF7F0D100AC608C /* Build configuration list for PBXNativeTarget "SecondSightController Watch AppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A48891C42DF7F0D100AC608C /* Debug */,
+				A48891C52DF7F0D100AC608C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A48891CA2DF7F0D100AC608C /* Build configuration list for PBXNativeTarget "SecondSightController Watch AppUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A48891C62DF7F0D100AC608C /* Debug */,
+				A48891C72DF7F0D100AC608C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

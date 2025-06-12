@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "gesture-tap-icon.png",
+      "filename" : "secondsight-logo-white.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "gesture-tap-icon@2x.png",
+      "filename" : "secondsight-logo-white@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "gesture-tap-icon@3x.png",
+      "filename" : "secondsight-logo-white@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
