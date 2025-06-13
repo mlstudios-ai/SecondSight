@@ -50,7 +50,7 @@ class SpeechManager: NSObject, ObservableObject {
         self.onSpeechProgress = onProgress
         
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = voice ?? AVSpeechSynthesisVoice(language: "en-US")
+        utterance.voice = voice ?? AVSpeechSynthesisVoice(language: "en-AU")
         utterance.rate = rate
         
         // Call the before callback

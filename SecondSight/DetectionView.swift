@@ -22,8 +22,8 @@ struct DetectionView: View {
     @State private var appState: AppState = AppState.ready
     @State private var displayVideo: Bool = true
     private let errorMessage: String = "Error!"
-    private let pauseMessage: String = "Paused"
-    private let resumeMessage: String = "In progress"
+    private let pauseMessage: String = "Detection paused"
+    private let resumeMessage: String = "Detection in progress"
     
     enum AppState { // different state the app can be in
         case error, ready, progress, speech, paused
@@ -74,15 +74,11 @@ struct DetectionView: View {
                 .background(.black)
                 .onDisappear {
                     pauseDetection()
-                    Task {
-                        await speakStatus(text: pauseMessage)
-                    }
+                    speakStatus(pauseMessage)
                 }
                 .onAppear {
                     resumeDetection()
-                    Task {
-                        await speakStatus(text: resumeMessage)
-                    }
+                    speakStatus(resumeMessage)
                 }
             }
             
@@ -218,21 +214,19 @@ struct DetectionView: View {
                         displayAction()
                     } else if value.translation.height < -2 { // swipe up - resume
                         resumeDetection()
-                        Task {
-                            await speakStatus(text: resumeMessage)
-                        }
+                        speakStatus(resumeMessage)
                     } else if value.translation.height > 2 { // swipe down - pause
                         pauseDetection()
-                        Task {
-                            await speakStatus(text: pauseMessage)
-                        }
+                        speakStatus(pauseMessage)
                     } else { // tap - describe scene
                         describeScene()
                     }
                 }
         )
         .onChange(of: detectionModel.uniqueLabels) {
-            alertHazards(newObjects:detectionModel.recognizedObjects)
+            if !speechManager.isSpeaking {
+                alertHazards(newObjects:detectionModel.recognizedObjects)
+            }
             updateWatchLabel()
         }
         .onChange(of: appState) {
@@ -262,21 +256,17 @@ struct DetectionView: View {
     }
 
     private func describeAction() {
-            describeScene()
+        describeScene()
     }
     
     private func pauseDetectionAction() {
         pauseDetection()
-        Task {
-            await speakStatus(text: pauseMessage)
-        }
+        speakStatus(pauseMessage)
     }
     
     private func resumeDetectionAction() {
         resumeDetection()
-        Task {
-            await speakStatus(text: resumeMessage)
-        }
+        speakStatus(resumeMessage)
     }
     
     private func displayAction() {
@@ -284,19 +274,17 @@ struct DetectionView: View {
     }
     
     private func alertHazards(newObjects: [RecognizedObject]) {
-        Task {
-            if !newObjects.isEmpty {
-                var generator = UIImpactFeedbackGenerator(style: .medium)
-                if newObjects.count > 2 { // 3 or more hazards
-                    generator = UIImpactFeedbackGenerator(style: .heavy)
-                }
-                
-                generator.prepare()
-                generator.impactOccurred()
-                
-                let hazardMessage = detectionModel.uniqueLabels.joined(separator: ", ")
-                await speak(text: hazardMessage) // use delegate to timeout
+        if !newObjects.isEmpty {
+            var generator = UIImpactFeedbackGenerator(style: .medium)
+            if newObjects.count > 2 { // 3 or more hazards
+                generator = UIImpactFeedbackGenerator(style: .heavy)
             }
+            
+            generator.prepare()
+            generator.impactOccurred()
+            
+            let hazardMessage = detectionModel.uniqueLabels.joined(separator: ", ")
+            speak(hazardMessage)
         }
     }
     
@@ -310,11 +298,11 @@ struct DetectionView: View {
         
         guard NetworkMonitor.shared.isConnected else {
             print("❌ No internet connection.")
-            Task {
-                await speak(text: "No internet connection. Please try again later.")
-            }
+            speak("No internet connection. Please try again later.")
             return
         }
+        
+        detectionModel.stop()
         
         var focus = detectionModel.stillLabels.joined(separator: ", ")
         var prompt: String = "Describe the image."
@@ -333,26 +321,18 @@ struct DetectionView: View {
                 prompt = "Describe the picture focus on \(focus)."
             }
         }
-//        else {
-//            image = UIImage(cgImage: detectionModel.stillCgiImage!)
-//        }
+        else {
+            image = UIImage(cgImage: detectionModel.stillCgiImage!)
+        }
                                                        
         sceneModel.infer(image: image, prompt: prompt) { generatedText in
             guard !generatedText.isEmpty else {
                 print("❌ Failed to generate text.")
-                Task {
-                    await speak(text: "Description not available. Please try again later.")
-                }
+                speak("Description not available.")
                 return
             }
             
-            DispatchQueue.main.async {
-                print("Scene description:", generatedText)
-                // Update your UI here
-                Task {
-                    await speak(text: generatedText)
-                }
-            }
+            speak(generatedText)
         }
     }
     
@@ -368,7 +348,7 @@ struct DetectionView: View {
     }
     
     private func resumeDetection() {
-        guard appState != .progress else {
+        guard detectionModel.status != .running else {
             return
         }
         
@@ -380,10 +360,12 @@ struct DetectionView: View {
     
     private func toggleDisplay() {
         displayVideo.toggle()
+        let message = displayVideo ? "Video is displayed" : "Video is hidden"
+        speak(message)
     }
     
-    private func speak(text: String) async {
-//        let currentState = appState
+    private func speak(_ text: String) {
+        let oldState = appState
         
         if (speechManager.isSpeaking) {
             speechManager.stopSpeech() // Or wait for `onend` event
@@ -397,14 +379,16 @@ struct DetectionView: View {
                 description = text
             },
             onDidFinish: {
-                resumeDetection()
+                appState = oldState
+                if oldState != .paused {
+                    resumeDetection()
+                }
                 description = nil
-//                appState = currentState
             }
         )
     }
     
-    private func speakStatus(text: String) async {
+    private func speakStatus(_ text: String) {
         if (speechManager.isSpeaking) {
             speechManager.stopSpeech() // Or wait for `onend` event
         }

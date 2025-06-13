@@ -102,12 +102,12 @@ class DetectionModel : ObservableObject {
 //                                && observation.confidence > 0.75
                             }
                             
-                            for observation in results {
-                                if let topLabel = observation.labels.first {
-                                    print("\(topLabel.identifier) detected with confidence \(topLabel.confidence)")
-                                    print("BBOX confidence \(observation.confidence)")
-                                }
-                            }
+//                            for observation in results {
+//                                if let topLabel = observation.labels.first {
+//                                    print("\(topLabel.identifier) detected with confidence \(topLabel.confidence)")
+//                                    print("BBOX confidence \(observation.confidence)")
+//                                }
+//                            }
                             // convert the results to RecognizedObject
                             self.recognizedObjects = results.map { $0.toRecognizedObject($0) }
                             self.uniqueLabels = Set(results.map{$0.labels[0].identifier})

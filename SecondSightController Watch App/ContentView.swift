@@ -82,12 +82,16 @@ struct ContentView: View {
         )
         .onChange(of: uniqueLabels) {
             alertHazards(labels: uniqueLabels)
+            WKInterfaceDevice.current().play(.notification)
+            WKInterfaceDevice.current().play(.click)
         }
         .onAppear {
+            WKInterfaceDevice.current().play(.click)
             alertHazards(labels: uniqueLabels)
         }
         .onReceive(connectivityManager.$appState) { message in
             guard let state = message else { return }
+            
             switch state {
             case WatchConnectivityManager.AppState.ready:
                 appState = .progress
@@ -96,6 +100,8 @@ struct ContentView: View {
                 appState = .progress
                 return
             case WatchConnectivityManager.AppState.speech:
+                WKInterfaceDevice.current().play(.click)
+                
                 appState = .speech
                 return
             case WatchConnectivityManager.AppState.paused:
@@ -107,6 +113,8 @@ struct ContentView: View {
         }
         .onReceive(connectivityManager.$label) { label in
             guard let label else { return }
+            
+            WKInterfaceDevice.current().play(.click)
             
             uniqueLabels = Set(label
                 .components(separatedBy: ",")
@@ -128,7 +136,10 @@ struct ContentView: View {
     }
     
     private func describeScene() {
-        appState = .speech
+        guard appState == .progress || appState == .speech else {
+            return
+        }
+        
         let command: String = WatchConnectivityManager.Command.describe.rawValue
         WatchConnectivityManager.shared.send(commandKey, command)
     }
