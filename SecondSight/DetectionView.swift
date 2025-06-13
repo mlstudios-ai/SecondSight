@@ -15,7 +15,8 @@ struct DetectionView: View {
     @ObservedObject private var connectivityManager = WatchConnectivityManager.shared
     @State private var endpoint: String = Endpoint.enigmaAI
     @State private var dragStartTime : Date? = nil
-    private let synthesizer = AVSpeechSynthesizer()
+//    private let synthesizer = AVSpeechSynthesizer()
+    @StateObject private var speechManager = SpeechManager()
     @State private var showSettings = false
     @State private var description: String? = nil
     @State private var appState: AppState = AppState.ready
@@ -331,9 +332,10 @@ struct DetectionView: View {
             if !detectionModel.uniqueLabels.isEmpty {
                 prompt = "Describe the picture focus on \(focus)."
             }
-        } else {
-            image = UIImage(cgImage: detectionModel.stillCgiImage!)
         }
+//        else {
+//            image = UIImage(cgImage: detectionModel.stillCgiImage!)
+//        }
                                                        
         sceneModel.infer(image: image, prompt: prompt) { generatedText in
             guard !generatedText.isEmpty else {
@@ -348,7 +350,7 @@ struct DetectionView: View {
                 print("Scene description:", generatedText)
                 // Update your UI here
                 Task {
-                    await speak(text: generatedText, duration:12)
+                    await speak(text: generatedText)
                 }
             }
         }
@@ -380,52 +382,44 @@ struct DetectionView: View {
         displayVideo.toggle()
     }
     
-    private func speak(text: String, duration: Int = 2) async {
-        if (synthesizer.isSpeaking) {
-            synthesizer.stopSpeaking(at: .immediate); // Or wait for `onend` event
+    private func speak(text: String) async {
+//        let currentState = appState
+        
+        if (speechManager.isSpeaking) {
+            speechManager.stopSpeech() // Or wait for `onend` event
         }
         
-        let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = AVSpeechSynthesisVoice(language: "en-AU") // You can change the language
-        
-        appState = .speech
-        detectionModel.stop()
-        synthesizer.speak(utterance)
-        description = text
-        
-        // speechsynthesizer delegate has issues with the UI
-        // hence, calculate time for speech
-        let wordCount = text.split(separator: " ").count
-        let wordTime: Int = 800 // average time for speaking a word
-        let maxSpeechTime = 3000 // maximum 3 seconds
-        let speechTime =  min(wordCount * wordTime, maxSpeechTime)  // total time for the speech
-        
-        // hack to give it sometime to finish speaking, delegate is not compatible with UI
-        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(speechTime)) {
-            synthesizer.stopSpeaking(at: .immediate);
-            resumeDetection()
-            description = nil
-        }
+        speechManager.speak(
+            text: text,
+            onWillStart: {
+                appState = .speech
+//                detectionModel.stop()
+                description = text
+            },
+            onDidFinish: {
+                resumeDetection()
+                description = nil
+//                appState = currentState
+            }
+        )
     }
     
     private func speakStatus(text: String) async {
-        if (synthesizer.isSpeaking) {
-            synthesizer.stopSpeaking(at: .immediate); // Or wait for `onend` event
+        if (speechManager.isSpeaking) {
+            speechManager.stopSpeech() // Or wait for `onend` event
         }
         
-        let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = AVSpeechSynthesisVoice(language: "en-AU") // You can change the language
-        
-        synthesizer.speak(utterance)
-        description = text
-        
-        // hack to give it sometime to finish speaking, delegate is not compatible with UI
-        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(800)) {
-            synthesizer.stopSpeaking(at: .immediate);
-            if appState == .progress {
-                description = nil
+        speechManager.speak(
+            text: text,
+            onWillStart: {
+                description = text
+            },
+            onDidFinish: {
+                if appState == .progress {
+                    description = nil
+                }
             }
-        }
+        )
     }
     
     private func updateWatchLabel() {

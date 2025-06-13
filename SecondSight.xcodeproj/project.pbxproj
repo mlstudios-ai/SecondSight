@@ -75,6 +75,7 @@
 		A449B7382DF8694F001CB0B9 /* Exceptions for "Shared" folder in "SecondSightController Watch App" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				SpeechManager.swift,
 				WatchConnectivityManager.swift,
 			);
 			target = A488919C2DF7F0D000AC608C /* SecondSightController Watch App */;
