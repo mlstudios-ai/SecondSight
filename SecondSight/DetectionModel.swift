@@ -37,7 +37,8 @@ class DetectionModel : ObservableObject {
     
     init() {
         let config = MLModelConfiguration()
-        if let model = try? YOLO11nDetectionModel(configuration: config).model {
+        if let model = try? DetectionV3(configuration: config).model {
+//        if let model = try? yolo11m(configuration: config).model {
             if let vnModel = try? VNCoreMLModel(for: model) {
                 YOLOv11Model = vnModel
             }
@@ -95,18 +96,19 @@ class DetectionModel : ObservableObject {
                         
                         // Process the results
                         if let results = request.results as? [VNRecognizedObjectObservation] {
-                            // get results with confidence > 0.9
-//                            let results = results.filter { $0.labels[0].confidence > 0.9 }
-                            let results = results.filter { observation in
-                                observation.labels.first?.confidence ?? 0 > 0.8
-//                                && observation.confidence > 0.75
+                            // debugging log
+                            for observation in results {
+                                if let topLabel = observation.labels.first {
+                                    print("\(topLabel.identifier) detected with confidence \(topLabel.confidence)")
+                                    print("BBOX confidence \(observation.confidence)")
+                                    print("True confidence\(observation.labels[0].confidence * observation.confidence)")
+                                }
                             }
                             
-//                            for observation in results {
-//                                if let topLabel = observation.labels.first {
-//                                    print("\(topLabel.identifier) detected with confidence \(topLabel.confidence)")
-//                                    print("BBOX confidence \(observation.confidence)")
-//                                }
+                            // get results with confidence > 0.9
+                            let results = results.filter { $0.labels[0].confidence > 0.6 }
+//                            let results = results.filter { observation in
+//                                observation.labels.first?.confidence ?? 0 > 0.8 && observation.confidence > 0.75
 //                            }
                             // convert the results to RecognizedObject
                             self.recognizedObjects = results.map { $0.toRecognizedObject($0) }
@@ -114,6 +116,10 @@ class DetectionModel : ObservableObject {
                         }
                     }
                     // Create a VNImageRequestHandler with the previewImage
+                    // resize image into train size - 640 x 640
+//                    let targetSize = CGSize(width: 640, height: 640)
+//                    let resizedImage = resizeImage(ciImage, to: targetSize)
+//                    let handler = VNImageRequestHandler(ciImage: resizedImage, options: [:])
                     let handler = VNImageRequestHandler(ciImage: ciImage, options: [:])
                     // Perform the request
                     do {
@@ -125,6 +131,14 @@ class DetectionModel : ObservableObject {
                 }
             }
         }
+    }
+    
+    func resizeImage(_ ciImage: CIImage, to size: CGSize) -> CIImage {
+        let scaleX = size.width / ciImage.extent.width
+        let scaleY = size.height / ciImage.extent.height
+        
+        let transform = CGAffineTransform(scaleX: scaleX, y: scaleY)
+        return ciImage.transformed(by: transform)
     }
 }
 

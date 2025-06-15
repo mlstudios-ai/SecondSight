@@ -5,9 +5,11 @@
 	<key>UILaunchImageFile~iphone</key>
 	<string>$(MARKETING_VERSION)</string>
 	<key>EnigmaAIEndpoint</key>
-	<string>https://dee4-2405-6e00-4a2-25ce-682e-aa50-17ea-bdcb.ngrok-free.app/api/scene/describe</string>
+	<string>https://d711-159-196-169-221.ngrok-free.app/api/scene/describe</string>
 	<key>AyaEndpoint</key>
-	<string>https://dee4-2405-6e00-4a2-25ce-682e-aa50-17ea-bdcb.ngrok-free.app/api/aya/scene/describe</string>
+	<string>https://d711-159-196-169-221.ngrok-free.app/api/aya/scene/describe</string>
+	<key>LlavaEndpoint</key>
+	<string>https://d711-159-196-169-221.ngrok-free.app/api/llava/scene/describe</string>
 	<key>HuggingFaceAPIKey</key>
 	<string></string>
 	<key>NSAppTransportSecurity</key>

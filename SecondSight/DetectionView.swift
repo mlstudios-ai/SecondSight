@@ -13,7 +13,6 @@ struct DetectionView: View {
     @StateObject private var detectionModel = DetectionModel()
     @StateObject private var sceneModel = SceneModel()
     @ObservedObject private var connectivityManager = WatchConnectivityManager.shared
-    @State private var endpoint: String = Endpoint.enigmaAI
     @State private var dragStartTime : Date? = nil
 //    private let synthesizer = AVSpeechSynthesizer()
     @StateObject private var speechManager = SpeechManager()
@@ -304,28 +303,17 @@ struct DetectionView: View {
         
         detectionModel.stop()
         
-        var focus = detectionModel.stillLabels.joined(separator: ", ")
-        var prompt: String = "Describe the image."
+        let endpoint = Endpoint.LLAVA
+        var prompt = "Describe the image in 20 words."
+        let image = UIImage(cgImage: detectionModel.stillCgiImage!)
         
-        if !detectionModel.stillLabels.isEmpty {
-            prompt = "Describe the picture focus on \(focus)."
-        }
-        
-        var image = UIImage(cgImage: detectionModel.previewCgiImage!)
-        
-        if appState != .speech {
-            focus = detectionModel.uniqueLabels.joined(separator: ", ")
-            prompt = "Describe the image."
-            
-            if !detectionModel.uniqueLabels.isEmpty {
-                prompt = "Describe the picture focus on \(focus)."
-            }
-        }
-        else {
-            image = UIImage(cgImage: detectionModel.stillCgiImage!)
+        if !detectionModel.stillLabels.isEmpty { // describe hazards
+//            endpoint = Endpoint.ENIGMAAI
+            let focus = detectionModel.stillLabels.joined(separator: ", ")
+            prompt = "Describe only \(focus) in the image in less than 15 words."
         }
                                                        
-        sceneModel.infer(image: image, prompt: prompt) { generatedText in
+        sceneModel.infer(endpoint, image: image, prompt: prompt) { generatedText in
             guard !generatedText.isEmpty else {
                 print("❌ Failed to generate text.")
                 speak("Description not available.")

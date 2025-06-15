@@ -19,11 +19,10 @@ import UIKit
 
 @MainActor
 class SceneModel : ObservableObject {
-    @State public var endpoint: String = Endpoint.enigmaAI
     
     init() {}
     
-    func infer(image: UIImage, prompt: String, completion: @escaping (String) -> Void) {
+    func infer(_ endpoint: String = Endpoint.ENIGMAAI, image: UIImage, prompt: String, completion: @escaping (String) -> Void) {
         // Prepare the API endpoint URL
         let url = URL(string: endpoint)! // Replace with your VLM endpoint
         
@@ -86,15 +85,22 @@ class SceneModel : ObservableObject {
 }
 
 struct Endpoint {
-    static let enigmaAI: String = {
+    static let ENIGMAAI: String = {
         guard let value = Bundle.main.object(forInfoDictionaryKey: "EnigmaAIEndpoint") as? String else {
             fatalError("EndpointURL not set in Info.plist")
         }
         return value
     }()
     
-    static let aya: String = {
+    static let AYA: String = {
         guard let value = Bundle.main.object(forInfoDictionaryKey: "AyaEndpoint") as? String else {
+            fatalError("EndpointURL not set in Info.plist")
+        }
+        return value
+    }()
+    
+    static let LLAVA: String = {
+        guard let value = Bundle.main.object(forInfoDictionaryKey: "LlavaEndpoint") as? String else {
             fatalError("EndpointURL not set in Info.plist")
         }
         return value
