@@ -18,11 +18,15 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
     @Published var notificationMessage: NotificationMessage? = nil
     @Published var appState: AppState? = nil
     @Published var label: String? = nil
+    @Published var desc: String? = nil
+    @Published var display: String? = "on"
     
     enum MessageKey: String { // different state the app can be in
         case command = "command"
         case state = "state"
         case label = "label"
+        case desc = "desc"
+        case display = "display"
     }
     
     enum Command: String { // Declare raw value type
@@ -87,6 +91,18 @@ extension WatchConnectivityManager: WCSessionDelegate {
             if let labelText = message[MessageKey.label.rawValue] as? String {
                 DispatchQueue.main.async { [weak self] in
                     self?.label = labelText
+                }
+            }
+        
+            if let labelText = message[MessageKey.desc.rawValue] as? String {
+                DispatchQueue.main.async { [weak self] in
+                    self?.desc = labelText
+                }
+            }
+        
+            if let labelText = message[MessageKey.display.rawValue] as? String {
+                DispatchQueue.main.async { [weak self] in
+                    self?.display = labelText
                 }
             }
         }

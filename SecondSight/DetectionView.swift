@@ -226,7 +226,6 @@ struct DetectionView: View {
             if !speechManager.isSpeaking {
                 alertHazards(newObjects:detectionModel.recognizedObjects)
             }
-            updateWatchLabel()
         }
         .onChange(of: appState) {
             updateWatchState()
@@ -283,6 +282,7 @@ struct DetectionView: View {
             generator.impactOccurred()
             
             let hazardMessage = detectionModel.uniqueLabels.joined(separator: ", ")
+            updateWatchLabel()
             speak(hazardMessage)
         }
     }
@@ -296,30 +296,31 @@ struct DetectionView: View {
         }
         
         guard NetworkMonitor.shared.isConnected else {
-            print("❌ No internet connection.")
-            speak("No internet connection. Please try again later.")
+            updateWatchScene("No internet connection for description.")
+            speak("No internet connection for description.")
             return
         }
         
         detectionModel.stop()
         
-        let endpoint = Endpoint.LLAVA
-        var prompt = "Describe the image in 20 words."
+        var endpoint = Endpoint.LLAVA
+        var prompt = "Describe the image in less than 30 words."
         let image = UIImage(cgImage: detectionModel.stillCgiImage!)
         
         if !detectionModel.stillLabels.isEmpty { // describe hazards
-//            endpoint = Endpoint.ENIGMAAI
+            endpoint = Endpoint.LLAVA
             let focus = detectionModel.stillLabels.joined(separator: ", ")
-            prompt = "Describe only \(focus) in the image in less than 15 words."
+            prompt = "Describe \(focus) in the image in less than 10 words."
         }
                                                        
         sceneModel.infer(endpoint, image: image, prompt: prompt) { generatedText in
             guard !generatedText.isEmpty else {
                 print("❌ Failed to generate text.")
+                updateWatchScene("Description not available.")
                 speak("Description not available.")
                 return
             }
-            
+            updateWatchScene(generatedText)
             speak(generatedText)
         }
     }
@@ -348,8 +349,9 @@ struct DetectionView: View {
     
     private func toggleDisplay() {
         displayVideo.toggle()
-        let message = displayVideo ? "Video is displayed" : "Video is hidden"
+        let message = displayVideo ? "Display is on" : "Display is off"
         speak(message)
+        updateWatchDisplayState()
     }
     
     private func speak(_ text: String) {
@@ -370,6 +372,9 @@ struct DetectionView: View {
                 appState = oldState
                 if oldState != .paused {
                     resumeDetection()
+                    if appState == .speech {
+                        appState = .progress
+                    }
                 }
                 description = nil
             }
@@ -394,10 +399,21 @@ struct DetectionView: View {
         )
     }
     
+    private func updateWatchScene(_ text: String) {
+        let labelKey = WatchConnectivityManager.MessageKey.desc.rawValue
+        WatchConnectivityManager.shared.send(labelKey, text)
+    }
+    
     private func updateWatchLabel() {
         let labelKey = WatchConnectivityManager.MessageKey.label.rawValue
         let labelText = detectionModel.uniqueLabels.joined(separator: ", ")
         WatchConnectivityManager.shared.send(labelKey, labelText)
+    }
+    
+    private func updateWatchDisplayState() {
+        let labelKey = WatchConnectivityManager.MessageKey.display.rawValue
+        let message = displayVideo ? "on" : "off"
+        WatchConnectivityManager.shared.send(labelKey, message)
     }
     
     private func updateWatchState() {

@@ -12,12 +12,15 @@ import os.log
 import UIKit
 import Vision
 import CoreML
+import CoreMotion
 
 // Detection Handler
 @MainActor
 class DetectionModel : ObservableObject {
     private var YOLOv11Model: VNCoreMLModel?
     let camera = Camera()
+    private let motionManager = CMMotionManager()
+    private var floorAngle: Double = 40    // Degrees from horizontal to consider "floor"
     @Published var stillLabels: Set<String> = []
     @Published var previewImage: Image?
     @Published var stillCgiImage: CGImage?
@@ -56,6 +59,7 @@ class DetectionModel : ObservableObject {
     public func start() {
         if self.status != .error {
             Task {
+                motionManager.startDeviceMotionUpdates()
                 self.status = .running
                 await camera.start()
                 await consumePreviewStream()
@@ -68,6 +72,7 @@ class DetectionModel : ObservableObject {
     // stop detection
     public func stop() {
         if self.status != .error {
+            motionManager.stopDeviceMotionUpdates()
             stillCgiImage = previewCgiImage
             stillLabels = uniqueLabels
             camera.stop()
@@ -96,30 +101,22 @@ class DetectionModel : ObservableObject {
                         
                         // Process the results
                         if let results = request.results as? [VNRecognizedObjectObservation] {
-                            // debugging log
-                            for observation in results {
-                                if let topLabel = observation.labels.first {
-                                    print("\(topLabel.identifier) detected with confidence \(topLabel.confidence)")
-                                    print("BBOX confidence \(observation.confidence)")
-                                    print("True confidence\(observation.labels[0].confidence * observation.confidence)")
-                                }
-                            }
-                            
                             // get results with confidence > 0.9
-                            let results = results.filter { $0.labels[0].confidence > 0.6 }
-//                            let results = results.filter { observation in
-//                                observation.labels.first?.confidence ?? 0 > 0.8 && observation.confidence > 0.75
-//                            }
-                            // convert the results to RecognizedObject
-                            self.recognizedObjects = results.map { $0.toRecognizedObject($0) }
-                            self.uniqueLabels = Set(results.map{$0.labels[0].identifier})
+                            
+                            // only returns result if camera is pointing at the floor
+                            let cameraAngle = self.getCurrentAngle()
+                            print("camera angle=\(cameraAngle)")
+                            if cameraAngle >= 0 && cameraAngle <= self.floorAngle {
+                                let results = results.filter { $0.labels[0].confidence > 0.8 }
+                                // convert the results to RecognizedObject
+                                self.recognizedObjects = results.map { $0.toRecognizedObject($0) }
+                                self.uniqueLabels = Set(results.map{$0.labels[0].identifier})
+                            } else {
+                                self.recognizedObjects = []
+                                self.uniqueLabels = []
+                            }
                         }
                     }
-                    // Create a VNImageRequestHandler with the previewImage
-                    // resize image into train size - 640 x 640
-//                    let targetSize = CGSize(width: 640, height: 640)
-//                    let resizedImage = resizeImage(ciImage, to: targetSize)
-//                    let handler = VNImageRequestHandler(ciImage: resizedImage, options: [:])
                     let handler = VNImageRequestHandler(ciImage: ciImage, options: [:])
                     // Perform the request
                     do {
@@ -139,6 +136,37 @@ class DetectionModel : ObservableObject {
         
         let transform = CGAffineTransform(scaleX: scaleX, y: scaleY)
         return ciImage.transformed(by: transform)
+    }
+    
+    func getCurrentAngle() -> Double {
+        guard let motion = motionManager.deviceMotion else { return 0 }
+        
+        let attitude = motion.attitude
+        let orientation = camera.getOrientation()
+        var radians: Double = 0
+        
+        switch orientation {
+        case .up:
+            radians = -attitude.roll
+        case .down:
+            radians = attitude.roll + 180
+        default:
+            radians = attitude.pitch    // portrait up
+        }
+        
+        // Calculate pitch angle in degrees
+        // Pitch: positive when device tilts up, negative when tilts down
+        let rollDegrees = radians * 180 / .pi
+        let currentAngle = rollDegrees
+        
+        return currentAngle
+    }
+    
+    private func normalizeAngle(_ angle: Double) -> Double {
+        var normalized = angle
+        while normalized < 0 { normalized += 360 }
+        while normalized >= 360 { normalized -= 360 }
+        return normalized
     }
 }
 

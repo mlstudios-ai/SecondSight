@@ -133,7 +133,7 @@ class Camera : NSObject {
         }
     }
     
-    private func getOrientation() -> CGImagePropertyOrientation {
+    func getOrientation() -> CGImagePropertyOrientation {
         switch UIDevice.current.orientation {
         case .landscapeLeft:
             return .up

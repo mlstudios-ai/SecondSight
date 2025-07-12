@@ -10,8 +10,10 @@ import SwiftUI
 struct ContentView: View {
     @State private var dragStartTime : Date? = nil
     @State private var appState: AppState = AppState.ready
+    @State private var display: Bool = true
     @State public var text: String = ""
     @State public var uniqueLabels: Set<String> = []
+    @StateObject private var speechManager = SpeechManager()
     @ObservedObject private var connectivityManager = WatchConnectivityManager.shared
     private let commandKey: String = WatchConnectivityManager.MessageKey.command.rawValue
     
@@ -26,9 +28,8 @@ struct ContentView: View {
                 Image("LogoWhite") // Placeholder logo
                     .resizable()
                     .scaledToFit()
-                    .frame(height: 40)
+                    .frame(height: 38)
                     .padding(.top, 0)
-                    .padding(.bottom, 10)
                 Spacer()
             }
             
@@ -46,19 +47,22 @@ struct ContentView: View {
                 case .error:
                     return "StatusError"
                 default:
-                    return "StatusError"
+                    return "LogoIconWhite"
                 }
             }
             
             Image(statusImage)
                 .resizable()
-                .frame(width: 60, height: 60)
+                .frame(width: 50, height: 50)
             
             Spacer()
-            
-            Text(text)
-            .font(.title3).bold()
-            .foregroundColor(.red)
+        
+            HStack{
+                Text(text)
+                .font(.title3).bold()
+                .foregroundColor(.red)
+            }
+            .frame(height: 30)
         }
         .foregroundColor(.white)
 //        .allowsHitTesting(appState != .speech)
@@ -121,9 +125,37 @@ struct ContentView: View {
                 .map { $0.trimmingCharacters(in: .whitespaces) }
             )
         }
+        .onReceive(connectivityManager.$desc) { message in
+            guard let message else { return }
+            WKInterfaceDevice.current().play(.click)
+            
+            if (speechManager.isSpeaking) {
+                speechManager.stopSpeech() // Or wait for `onend` event
+            }
+            speechManager.speak(
+                text: message
+            )
+        }
+        .onReceive(connectivityManager.$display) { message in
+            guard let message else { return }
+            WKInterfaceDevice.current().play(.click)
+            display = message == "on"
+            
+            let text = display ?  "Display is on" : "Display is off"
+            if (speechManager.isSpeaking) {
+                speechManager.stopSpeech() // Or wait for `onend` event
+            }
+            speechManager.speak(
+                text: text
+            )
+        }
     }
     
     private func alertHazards(labels: Set<String> = []) {
+        if (speechManager.isSpeaking) {
+            speechManager.stopSpeech() // Or wait for `onend` event
+        }
+        
         let hazardText = uniqueLabels.joined(separator: ", ")
         let maxLength = 20 // or whatever limit you want
 
@@ -133,6 +165,13 @@ struct ContentView: View {
         } else {
             text = hazardText
         }
+        
+        speechManager.speak(
+            text: text,
+            onDidFinish: {
+                text = ""
+            }
+        )
     }
     
     private func describeScene() {
@@ -148,12 +187,27 @@ struct ContentView: View {
         appState = .paused
         let command: String = WatchConnectivityManager.Command.pause.rawValue
         WatchConnectivityManager.shared.send(commandKey, command)
+        
+        if (speechManager.isSpeaking) {
+            speechManager.stopSpeech() // Or wait for `onend` event
+        }
+        speechManager.speak(
+            text: "Detection paused"
+        )
     }
     
     private func resumeDetection() {
         appState = .progress
         let command: String = WatchConnectivityManager.Command.resume.rawValue
         WatchConnectivityManager.shared.send(commandKey, command)
+        
+        
+        if (speechManager.isSpeaking) {
+            speechManager.stopSpeech() // Or wait for `onend` event
+        }
+        speechManager.speak(
+            text: "Detection in progress"
+        )
     }
     
     private func displayToggle() {
