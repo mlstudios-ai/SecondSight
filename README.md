@@ -1,29 +1,12 @@
 # SecondSight
 
+![Wearable assistive tech for vision impairment](images/showcase.png)
+
 **An AI-Powered Assistive Tool for Visual Impairment**
 
 SecondSight is an iOS application that leverages state-of-the-art artificial intelligence to enhance safety and spatial awareness for individuals with visual impairment. Using real-time hazard detection and scene description, SecondSight aims to prevent accidents and improve independence for users with complete blindness or low vision.
 
 **⚠️ IMPORTANT:** This is a prototype for proof of concept and academic purposes ONLY. For health and safety, practical use is **STRICTLY PROHIBITED**. This application is NOT a replacement for certified assistive tools or medical devices.
-
----
-
-## Table of Contents
-- [Overview](#overview)
-- [Team](#team)
-- [Key Features](#key-features)
-- [Architecture](#architecture)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Performance Metrics](#performance-metrics)
-- [Technical Details](#technical-details)
-- [Limitations](#limitations)
-- [Future Work](#future-work)
-- [Project Background](#project-background)
-- [References](#references)
-
----
 
 ## Overview
 
@@ -59,9 +42,9 @@ When the camera is pointed toward the ground (covering approximately 2-3 strides
 ### 2. Scene Description Mode
 Users can request detailed environmental descriptions at any time:
 - **Two-finger tap** anywhere on the screen to trigger scene description
-- AI-generated descriptions using a fine-tuned Vision Language Model (VLM)
+- AI-generated descriptions using Apple's **FastVLM** (on-device)
 - Provides context about hazards and general surroundings
-- **Note:** Requires internet connection for remote inference
+- **Fully offline** - no internet connection required
 
 ### 3. Simple Gesture Controls
 Designed for accessibility with minimal interaction:
@@ -70,10 +53,17 @@ Designed for accessibility with minimal interaction:
 - **Swipe down**: Pause detection
 - **Swipe up**: Resume detection
 
-### 4. Apple Watch Companion
+### 4. Apple Watch Companion App
+- **Full standalone companion app** for wearable-only operation
 - Receive haptic feedback and notifications directly on the wrist
 - Allows for more discreet and convenient alerts
-- Operates via Bluetooth pairing with iPhone
+- Fully integrated with iPhone via Bluetooth pairing
+
+### 5. Intelligent Mode Switching
+- **Automatic camera angle detection** using gyroscope
+- **< 30° from ground**: Activates hazard detection mode
+- **> 30° from ground**: Switches to scene description mode
+- Seamless transitions without manual intervention
 
 ---
 
@@ -89,8 +79,9 @@ SecondSight uses a **component-based architecture** with three key components:
 
 2. **Model Inferencing**
    - **On-device**: YOLOv11n CoreML for hazard detection
-   - **Remote**: Fine-tuned ViT-GPT2 model for scene description via FastAPI
+   - **On-device**: Apple FastVLM for scene description (fully offline)
    - Optimized for mobile device resource constraints
+   - No internet connection required for core functionality
 
 3. **Machine Learning Operations (MLOps)**
    - Automated pipelines using **ClearML**
@@ -102,10 +93,11 @@ SecondSight uses a **component-based architecture** with three key components:
 ![Architecture for mobile application](images/user_data_flow.png)
 
 The system integrates:
-- **Video Processing**: Real-time camera feed handling
-- **Hazard Detection**: YOLOv11n inference on-device
-- **Scene Description**: Remote VLM inference via FastAPI
+- **Video Processing**: Real-time camera feed handling with gyroscope-based angle detection
+- **Hazard Detection**: YOLOv11n inference on-device (camera angle < 30°)
+- **Scene Description**: Apple FastVLM inference on-device (camera angle > 30°)
 - **User Feedback**: Haptic, speech, and visual alerts
+- **Apple Watch Integration**: Full companion app for standalone operation
 
 ---
 
@@ -134,7 +126,7 @@ The system integrates:
 
 ### Permissions
 - Camera access (required)
-- Internet connection (optional, needed for scene description)
+- Motion & orientation access (required for gyroscope-based mode switching)
 
 ---
 
@@ -179,10 +171,14 @@ The system integrates:
 3. **Point camera downward**: Aim the camera toward the ground at an angle that covers 2-3 strides ahead
 
 ### During Use
+- **Automatic Mode Switching**: 
+  - Point camera **down (< 30°)**: Hazard detection mode activates
+  - Point camera **up (> 30°)**: Scene description mode activates
 - **Hazard Detected**: You'll receive haptic feedback and a voice alert (e.g., "Rock ahead")
-- **Request Scene Description**: Two-finger tap anywhere on screen (requires internet)
+- **Request Scene Description**: Two-finger tap anywhere on screen (works offline)
 - **Pause Detection**: Swipe down on screen
 - **Resume Detection**: Swipe up on screen
+- **Apple Watch**: Receive all alerts and notifications on your wrist
 
 ### Settings (Optional)
 Hold the screen to access settings where you can toggle:
@@ -233,13 +229,13 @@ SecondSight has been optimized and tested to meet the following performance targ
 - **Output**: Bounding boxes with labels and confidence scores
 - **Performance**: 21 FPS on iPhone 14 Pro
 
-#### 2. Scene Description - ViT-GPT2 Student
-- **Framework**: Vision Transformer + GPT2 decoder
-- **Deployment**: Remote inference via FastAPI
-- **Training**: Knowledge distillation from LLaVA 1.5-7B teacher model
+#### 2. Scene Description - Apple FastVLM
+- **Framework**: Apple FastVLM (Vision Language Model)
+- **Deployment**: On-device inference (fully offline)
 - **Input**: Single still image from camera
 - **Output**: Natural language description of scene
-- **Model Hosting**: Application scope (1 model instance per server)
+- **Performance**: Slight delay on first load, faster on subsequent requests
+- **Advantage**: No internet connection required, maintains user privacy
 
 ### MLOps Pipelines
 
@@ -265,12 +261,13 @@ SecondSight has been optimized and tested to meet the following performance targ
 
 ### Technology Stack
 - **Frontend**: Swift, SwiftUI
-- **ML Frameworks**: PyTorch, CoreML, Vision
+- **ML Frameworks**: PyTorch, CoreML, Vision, Apple FastVLM
 - **MLOps**: ClearML, GitHub Actions
-- **Backend**: FastAPI (Python)
 - **Cloud**: Google Cloud (for training agents)
+- **Sensors**: CoreMotion (gyroscope for angle detection)
 - **Haptics**: CoreHaptics framework
 - **Speech**: AVFoundation (Text-to-Speech)
+- **Watch**: WatchKit, WatchConnectivity
 
 ---
 
@@ -282,8 +279,6 @@ SecondSight has been optimized and tested to meet the following performance targ
 - **Weather**: May not perform well in rain, fog, or other adverse weather conditions
 - **Hazard Classes**: Limited to 5 predefined hazard types
 - **Battery Consumption**: Continuous camera and detection may drain battery quickly
-- **Scene Description**: Requires internet connection for remote inference
-- **Camera Angle**: Must be pointed toward ground at specific angle for optimal detection
 - **Detection Distance**: Effective range limited to 2-3 strides ahead
 
 ### Safety Limitations
@@ -303,16 +298,18 @@ SecondSight has been optimized and tested to meet the following performance targ
 
 ## Future Work
 
+### ✅ Recently Implemented (Showcase Version)
+- **Offline Scene Description**: Apple FastVLM for on-device operation (no internet required)
+- **Apple Watch Standalone**: Full companion app integrated for wearable-only operation
+- **Gyroscope Integration**: Automatic camera angle-based mode switching (< 30° = detection, > 30° = scene description)
+
 ### Planned Enhancements (v4.0+)
 - **Cloud-based Detection**: Move detection to cloud to reduce device resource consumption
 - **Microservices Architecture**: Better resource allocation for model inferencing
 - **Android Support**: Expand to Android devices for wider accessibility
-- **Apple Watch Standalone**: Full companion app for wearable-only operation
 - **Voice Control**: Hands-free interaction with voice commands
 - **Auto-Model Updates**: Cloud-based model updates without app reinstall
 - **Battery Optimization**: Improved power management for extended usage
-- **Offline Scene Description**: Smaller on-device VLM for offline operation
-- **Gyroscope Integration**: Automatic camera angle calibration
 - **Low-Light Enhancement**: Night vision mode with grayscale optimization
 - **Expanded Hazard Classes**: More object types based on user feedback
 - **External Integration**: Support for Braille displays and other assistive hardware
@@ -371,14 +368,14 @@ According to the World Health Organization (WHO, 2023):
 
 ## In Scope vs. Out of Scope
 
-### ✅ In Scope (v3.0 MVP)
+### ✅ In Scope (Showcase Version)
 - Custom-trained YOLOv11n CoreML hazard detection (5 classes)
 - Dual-channel alerts (haptic + speech)
-- On-demand scene description via two-finger tap (remote ViT-GPT2)
+- On-demand scene description via two-finger tap (Apple FastVLM - fully offline)
+- Automatic mode switching via gyroscope (< 30° detection, > 30° description)
 - iPhone 14 Pro / 15 Pro (A16+) support running iOS 17+
 - Custom ML pipelines (YOLO + distilled VLM)
-- Public inference REST API for QA/CI
-- Apple Watch companion (nice-to-have)
+- Full Apple Watch companion app with standalone operation
 
 ### ❌ Out of Scope
 - Navigation / path guidance
