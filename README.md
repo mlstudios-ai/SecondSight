@@ -40,9 +40,6 @@ SecondSight addresses critical safety gaps in existing assistive technologies fo
 - Enhance assistive tool accessibility across social, economic, and geographic boundaries
 - Promote independence and enhance social wellbeing
 
-## System Architecture
-![Architecture for mobile application](images/user_data_flow.png)
-
 ## Key Features
 
 ### 1. Hazard Detection Mode
@@ -102,6 +99,8 @@ SecondSight uses a **component-based architecture** with three key components:
    - Model training on Google Cloud remote agents
 
 ### System Architecture Diagram
+![Architecture for mobile application](images/user_data_flow.png)
+
 The system integrates:
 - **Video Processing**: Real-time camera feed handling
 - **Hazard Detection**: YOLOv11n inference on-device
