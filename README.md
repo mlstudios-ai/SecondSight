@@ -10,7 +10,7 @@ SecondSight is an iOS application that leverages state-of-the-art artificial int
 
 ## Video Demo
 <p align="center">
-  <video src="images/demo.mov" width="100%" controls></video>
+  <video src="https://github.com/mlstudios-ai/SecondSight/raw/refs/heads/showcase/images/demo.mov" width="100%" controls></video>
 </p>
 
 
