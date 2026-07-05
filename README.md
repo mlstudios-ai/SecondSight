@@ -9,10 +9,16 @@ SecondSight is an iOS application that leverages state-of-the-art artificial int
 **⚠️ IMPORTANT:** This is a prototype for proof of concept and academic purposes ONLY. For health and safety, practical use is **STRICTLY PROHIBITED**. This application is NOT a replacement for certified assistive tools or medical devices.
 
 ## Video Demo
-<p align="center">
-  <video src="https://github.com/mlstudios-ai/SecondSight/raw/refs/heads/showcase/images/demo.mov" width="100%" controls></video>
-</p>
-
+<div class="video-container">
+    <video controls="" poster="secondsight/assets/secondsight_image.png" preload="metadata">
+        <source src="https://github.com/mlstudios-ai/secondsight/raw/refs/heads/main/docs/secondsight/assets/demo.mov" type="video/mov">
+        <div class="video-fallback">
+            <h3>Video Not Supported</h3>
+            <p>Your browser doesn't support HTML5 video playback.</p>
+            <p><a href="https://github.com/mlstudios-ai/mlstudios-ai/raw/refs/heads/main/docs/secondsight/assets/secondsight-demo.mp4" download>Download the demo video</a> to view it locally.</p>
+        </div>
+    </video>
+</div>
 
 ## Overview
 
