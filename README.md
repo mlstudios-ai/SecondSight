@@ -8,6 +8,12 @@ SecondSight is an iOS application that leverages state-of-the-art artificial int
 
 **⚠️ IMPORTANT:** This is a prototype for proof of concept and academic purposes ONLY. For health and safety, practical use is **STRICTLY PROHIBITED**. This application is NOT a replacement for certified assistive tools or medical devices.
 
+## Video Demo
+<p align="center">
+  <video src="images/demo.mov" width="100%" controls></video>
+</p>
+
+
 ## Overview
 
 SecondSight addresses critical safety gaps in existing assistive technologies for the visually impaired. While traditional tools like canes and guide dogs are invaluable, they can sometimes miss small hazardous objects at close proximity. SecondSight complements these methods by providing:
