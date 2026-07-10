@@ -44,19 +44,21 @@ When the camera is pointed toward the ground (covering approximately 2-3 strides
 
 ### 2. Scene Description Mode
 Users can request detailed environmental descriptions at any time:
-- **Two-finger tap** anywhere on the screen to trigger scene description
+- **One-finger tap** anywhere on the screen to trigger scene description
 - AI-generated descriptions using Apple's **FastVLM** (on-device)
 - Provides context about hazards and general surroundings
 - **Fully offline** - no internet connection required
 
 ### 3. Simple Gesture Controls
-Designed for accessibility with minimal interaction:
+Designed for accessibility with minimal interaction. Inclusive design cater for physical challenges such as tremor:
 - **Zero interaction to start**: Detection begins automatically on launch
-- **Two-finger tap**: Request scene description
+- **One-finger tap**: Request scene description
 - **Swipe down**: Pause detection
 - **Swipe up**: Resume detection
+- **Long press**: Camera display ON/OFF
 
 ### 4. Apple Watch Companion App
+Hands-free usability - the Apple watch can worn on wirst or clipped to the white cane for detection with single touch control using a thumb:
 - **Full standalone companion app** for wearable-only operation
 - Receive haptic feedback and notifications directly on the wrist
 - Allows for more discreet and convenient alerts
@@ -81,8 +83,8 @@ SecondSight uses a **component-based architecture** with three key components:
    - Gesture-based controls
 
 2. **Model Inferencing**
-   - **On-device**: YOLOv11n CoreML for hazard detection
-   - **On-device**: Apple FastVLM for scene description (fully offline)
+   - **On-device**: YOLOv11n CoreML for hazard detection 
+   - **On-device**: Apple FastVLM for scene description
    - Optimized for mobile device resource constraints
    - No internet connection required for core functionality
 
@@ -91,6 +93,7 @@ SecondSight uses a **component-based architecture** with three key components:
    - Two pipelines: Hazard Detection and Scene Description
    - Continuous Integration/Continuous Deployment (CI/CD)
    - Model training on Google Cloud remote agents
+   - FastAPI model deployment and serving
 
 ### System Architecture Diagram
 ![Architecture for mobile application](images/user_data_flow.png)
@@ -183,14 +186,6 @@ The system integrates:
 - **Resume Detection**: Swipe up on screen
 - **Apple Watch**: Receive all alerts and notifications on your wrist
 
-### Settings (Optional)
-Hold the screen to access settings where you can toggle:
-- Video display on/off
-- Speech feedback on/off
-- Haptic feedback on/off
-
-**Note:** Settings adjustment requires some vision ability and is primarily intended for caregivers.
-
 ### Best Practices
 - Use in **outdoor daytime** conditions with good lighting
 - Point camera at ground level covering 2-3 strides distance
@@ -216,7 +211,7 @@ SecondSight has been optimized and tested to meet the following performance targ
 
 ### Model Performance
 - **YOLOv11n (Hazard Detection)**: Custom-trained on specialized dataset for downward-angle camera captures at 2-3 stride distances
-- **ViT-GPT2 Student (Scene Description)**: Knowledge-distilled from LLaVA 1.5-7B for lightweight inference
+- **ViT-GPT2 Student (Scene Description)**: Knowledge-distilled from LLaVA 1.5-7B for lightweight inference (earlier version)
 
 ---
 
