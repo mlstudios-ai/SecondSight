@@ -2,8 +2,6 @@
 
 ![Wearable assistive tech for vision impairment](images/showcase.png)
 
-[![SecondSight demo](images/showcase.png)](https://github.com/user-attachments/assets/02046dc4-226e-48f1-9870-5790a50f23e4)
-
 **An AI-Powered Assistive Tool for Visual Impairment**
 
 SecondSight is an iOS application that leverages state-of-the-art artificial intelligence to enhance safety and spatial awareness for individuals with visual impairment. Using real-time hazard detection and scene description, SecondSight aims to prevent accidents and improve independence for users with complete blindness or low vision.
